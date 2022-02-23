@@ -128,14 +128,13 @@ class CoNLLNERTrainer(BaseTrainer):
 
         """
 
-        request_string = {
+        return {
             "context_type": Sentence,
             "request": {
                 Token: ["ner"],
                 Sentence: [],  # span by default
             },
         }
-        return request_string
 
     def consume(self, instance):
         """
@@ -156,9 +155,7 @@ class CoNLLNERTrainer(BaseTrainer):
         ner_tags, ner_ids = tokens["ner"], []
 
         for word in tokens["text"]:
-            char_ids = []
-            for char in word:
-                char_ids.append(self.char_alphabet.get_index(char))
+            char_ids = [self.char_alphabet.get_index(char) for char in word]
             if len(char_ids) > self.config_data.max_char_length:
                 char_ids = char_ids[: self.config_data.max_char_length]
             char_id_seqs.append(char_ids)
@@ -166,10 +163,8 @@ class CoNLLNERTrainer(BaseTrainer):
             word = self.normalize_func(word)
             word_ids.append(self.word_alphabet.get_index(word))
 
-        for ner in ner_tags:
-            ner_ids.append(self.ner_alphabet.get_index(ner))
-
-        max_len = max([len(char_seq) for char_seq in char_id_seqs])
+        ner_ids.extend(self.ner_alphabet.get_index(ner) for ner in ner_tags)
+        max_len = max(len(char_seq) for char_seq in char_id_seqs)
         self.max_char_length = max(self.max_char_length, max_len)
 
         self.train_instances_cache.append((word_ids, char_id_seqs, ner_ids))
@@ -184,9 +179,7 @@ class CoNLLNERTrainer(BaseTrainer):
         counter = len(self.train_instances_cache)
         logger.info(f"Total number of ner_data: {counter}")
 
-        lengths = sum(
-            [len(instance[0]) for instance in self.train_instances_cache]
-        )
+        lengths = sum(len(instance[0]) for instance in self.train_instances_cache)
 
         logger.info(f"Average sentence length: {(lengths / counter):0.3f}")
 
@@ -274,8 +267,7 @@ class CoNLLNERTrainer(BaseTrainer):
             loss = self.model(word, char, labels, mask=masks)
             losses += loss.item()
 
-        mean_loss = losses / len(val_data)
-        return mean_loss
+        return losses / len(val_data)
 
     def post_validation_action(self, eval_result):
         """
@@ -320,7 +312,7 @@ class CoNLLNERTrainer(BaseTrainer):
                 f"epoch={best_epoch}"
             )
 
-    def finish(self, resources: Resources):  # pylint: disable=unused-argument
+    def finish(self, resources: Resources):    # pylint: disable=unused-argument
         """
         Releasing resources and saving models.
 
@@ -331,18 +323,11 @@ class CoNLLNERTrainer(BaseTrainer):
 
         """
         if self.resource:
-            keys_to_serializers = {}
-            for key in resources.keys():
-                # pylint: disable=consider-using-with
-                if key == "model":
-                    keys_to_serializers[key] = lambda x, y: pickle.dump(
+            keys_to_serializers = {key: (lambda x, y: pickle.dump(
                         x.state_dict(), open(y, "wb")
-                    )
-                else:
-                    keys_to_serializers[key] = lambda x, y: pickle.dump(
+                    )) if key == "model" else (lambda x, y: pickle.dump(
                         x, open(y, "wb")
-                    )
-
+                    )) for key in resources.keys()}
             self.resource.save(
                 keys_to_serializers, output_dir=self.config_model.resource_dir
             )
@@ -404,10 +389,8 @@ class CoNLLNERTrainer(BaseTrainer):
               length of each sentences in the batch
         """
         batch_size = len(data)
-        batch_length = max([len(d[0]) for d in data])
-        char_length = max(
-            [max([len(charseq) for charseq in d[1]]) for d in data]
-        )
+        batch_length = max(len(d[0]) for d in data)
+        char_length = max(max(len(charseq) for charseq in d[1]) for d in data)
 
         char_length = min(
             self.config_data.max_char_length,
@@ -458,5 +441,4 @@ def _batch_size_fn(new: Tuple, count: int, _: int):
     _batch_size_fn.max_length = max(  # type: ignore
         _batch_size_fn.max_length, len(new[0])  # type: ignore
     )
-    elements = count * _batch_size_fn.max_length  # type: ignore
-    return elements
+    return count * _batch_size_fn.max_length

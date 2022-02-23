@@ -37,10 +37,7 @@ def predict_forward_fn(model, batch):
     raw_text_features: List[Feature] = batch["raw_text_tag"]["features"]
     srl_features: List[Feature] = [None] * len(raw_text_features)
 
-    text: List[List[str]] = []
-    for feature in raw_text_features:
-        text.append(feature.unroll()[0])
-
+    text: List[List[str]] = [feature.unroll()[0] for feature in raw_text_features]
     output = model.decode(
         text=text,
         char_batch=char_tensor,
@@ -69,5 +66,5 @@ pl.initialize()
 
 for pack in pl.process_dataset("data/test"):
     print("====== pack ======")
-    for instance in pack.get(Sentence):
+    for _ in pack.get(Sentence):
         pass

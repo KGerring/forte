@@ -111,35 +111,33 @@ class ImportManager:
         return sorted(self.__import_statements)
 
     def create_import_statement(self, full_name: str, as_name: str):
-        if full_name not in NON_COMPOSITES:
-            parts = full_name.split(".")
-            class_name = parts[-1]
+        if full_name in NON_COMPOSITES:
+            return
+        parts = full_name.split(".")
+        class_name = parts[-1]
 
-            if len(parts) > 1:
-                module_name = ".".join(parts[:-1])
+        if len(parts) > 1:
+            module_name = ".".join(parts[:-1])
 
-                if (
-                    self.__module_name is None
-                    or not module_name == self.__module_name
-                ):
-                    # No need to import classes in the same module
-                    if class_name == as_name:
-                        import_statement = (
-                            f"from {module_name} " f"import {class_name}"
-                        )
-                    else:
-                        import_statement = (
-                            f"from {module_name} "
-                            f"import {class_name} as {as_name}"
-                        )
-
-                    self.__import_statements.append(import_statement)
-            else:
+            if self.__module_name is None or module_name != self.__module_name:
+                # No need to import classes in the same module
                 if class_name == as_name:
-                    import_statement = f"import {class_name}"
+                    import_statement = (
+                        f"from {module_name} " f"import {class_name}"
+                    )
                 else:
-                    import_statement = f"import {class_name} as {as_name}"
+                    import_statement = (
+                        f"from {module_name} "
+                        f"import {class_name} as {as_name}"
+                    )
+
                 self.__import_statements.append(import_statement)
+        else:
+            if class_name == as_name:
+                import_statement = f"import {class_name}"
+            else:
+                import_statement = f"import {class_name} as {as_name}"
+            self.__import_statements.append(import_statement)
 
     def __find_next_available(self, class_name) -> str:
         counter = 0
@@ -188,11 +186,13 @@ class ImportManager:
                 f"more objects."
             )
 
-        if full_name not in self.__imported_names:
-            if full_name not in SUPPORTED_PRIMITIVES:
-                as_name = self.__assign_as_name(full_name)
-                self.__imported_names[full_name] = as_name
-                self.create_import_statement(full_name, as_name)
+        if (
+            full_name not in self.__imported_names
+            and full_name not in SUPPORTED_PRIMITIVES
+        ):
+            as_name = self.__assign_as_name(full_name)
+            self.__imported_names[full_name] = as_name
+            self.create_import_statement(full_name, as_name)
 
 
 class ImportManagerPool:
@@ -217,13 +217,12 @@ class ImportManagerPool:
     def get(self, module_name: str) -> ImportManager:
         if module_name in self.__managers:
             return self.__managers[module_name]
-        else:
-            nm = ImportManager(self.__root_manager, module_name)
-            for full_name in self.__default_imports:
-                nm.add_object_to_import(full_name)
+        nm = ImportManager(self.__root_manager, module_name)
+        for full_name in self.__default_imports:
+            nm.add_object_to_import(full_name)
 
-            self.__managers[module_name] = nm
-            return nm
+        self.__managers[module_name] = nm
+        return nm
 
     def fix_all_modules(self):
         self.__root_manager.fix_modules()
@@ -264,7 +263,7 @@ class EntryName:
     def __init__(self, entry_name: str):
         entry_splits = entry_name.split(".")
         self.filename, self.name = entry_splits[-2:]
-        self.pkg = ".".join(entry_splits[0:-2])
+        self.pkg = ".".join(entry_splits[:-2])
         self.pkg_dir = self.pkg.replace(".", "/")
         self.module_name: str = f"{self.pkg}.{self.filename}"
         self.class_name: str = entry_name
@@ -421,8 +420,7 @@ class NdArrayProperty(Property):
             return f"FNdArray(shape={self.ndarray_shape}, dtype='{self.ndarray_dtype}')"
 
     def _full_class(self):
-        item_type = self.import_manager.get_name_to_use(self.type_str)
-        return item_type
+        return self.import_manager.get_name_to_use(self.type_str)
 
     def to_field_value(self):
         return self.name
@@ -439,7 +437,7 @@ class DictProperty(Property):
         default_val: Any = None,
         self_ref: bool = False,
     ):
-        if not key_type == "str":
+        if key_type != "str":
             # This string value constraint is to conform with JSON format
             #  requirement: https://www.json.org/json-en.html
             raise CodeGenerationException(
@@ -469,10 +467,7 @@ class DictProperty(Property):
         return f"{self._full_class()}"
 
     def default_value(self) -> str:
-        if self.type_str == "typing.Dict":
-            return "dict()"
-        else:
-            return "FDict(self)"
+        return "dict()" if self.type_str == "typing.Dict" else "FDict(self)"
 
     def _full_class(self) -> str:
         composite_type = self.import_manager.get_name_to_use(self.type_str)
@@ -518,10 +513,7 @@ class ListProperty(Property):
         return f"{self._full_class()}"
 
     def default_value(self) -> str:
-        if self.type_str == "typing.List":
-            return "[]"
-        else:
-            return "FList(self)"
+        return "[]" if self.type_str == "typing.List" else "FList(self)"
 
     def _full_class(self):
         composite_type = self.import_manager.get_name_to_use(self.type_str)
@@ -553,7 +545,7 @@ class EntryDefinition(Item):
         self.class_attributes = (
             [] if class_attributes is None else class_attributes
         )
-        self.description = description if description else None
+        self.description = description or None
         self.init_args = init_args if init_args is not None else ""
         self.init_args = self.init_args.replace("=", " = ")
 
@@ -561,9 +553,7 @@ class EntryDefinition(Item):
         return indent_line(f"def __init__(self, {self.init_args}):", level)
 
     def to_property_code(self, level: int) -> str:
-        lines = []
-        for p in self.properties:
-            lines.append(p.to_declaration(0))
+        lines = [p.to_declaration(0) for p in self.properties]
         return indent_code(
             [indent_line(line, 0) for line in lines], level, False
         )
@@ -591,16 +581,10 @@ class EntryDefinition(Item):
 
         lines.append("")
 
-        property_code = self.to_property_code(1)
-        if property_code:
-            lines.append(property_code)
-            lines.append("")
-
-        class_attr_code = self.to_class_attribute_code(1)
-        if class_attr_code:
-            lines.append(class_attr_code)
-            lines.append("")
-
+        if property_code := self.to_property_code(1):
+            lines.extend((property_code, ""))
+        if class_attr_code := self.to_class_attribute_code(1):
+            lines.extend((class_attr_code, ""))
         lines += [
             self.to_init_code(1),
             indent_line(f"super().__init__({super_args})", 2),
@@ -614,14 +598,14 @@ class EntryDefinition(Item):
     def to_item_descs(items, title):
         item_descs = [item.to_description(0) for item in items]
         item_descs = [item for item in item_descs if item is not None]
-        if len(item_descs) > 0:
+        if item_descs:
             item_descs = [indent_line(title, 0)] + [
                 indent_line(desc, 1) for desc in item_descs
             ]
         return item_descs
 
     def to_description(self, level: int) -> Optional[str]:
-        class_desc = [] if self.description is None else [self.description + ""]
+        class_desc = [] if self.description is None else [f'{self.description}']
         item_descs = self.to_item_descs(self.properties, "Attributes:")
 
         descs = class_desc + item_descs
@@ -704,7 +688,7 @@ class ModuleWriter:
         """
 
         self.make_module_dirs(tempdir, destination, include_init)
-        full_path = os.path.join(tempdir, self.pkg_dir, self.file_name) + ".py"
+        full_path = f'{os.path.join(tempdir, self.pkg_dir, self.file_name)}.py'
 
         with open(full_path, "w", encoding="utf-8") as f:
             # Write header.
@@ -753,10 +737,9 @@ class ModuleWriterPool:
     def get(self, module_name: str) -> ModuleWriter:
         if module_name in self.__module_writers:
             return self.__module_writers[module_name]
-        else:
-            mw = ModuleWriter(module_name, self.__import_managers)
-            self.__module_writers[module_name] = mw
-            return mw
+        mw = ModuleWriter(module_name, self.__import_managers)
+        self.__module_writers[module_name] = mw
+        return mw
 
     def writers(self):
         return self.__module_writers.values()
@@ -772,7 +755,7 @@ class EntryTreeNode:
     def __repr__(self):
         r"""for printing purpose."""
         attr_str = ", ".join(self.attributes)
-        return self.name + ": " + attr_str
+        return f'{self.name}: {attr_str}'
 
 
 class EntryTree:
@@ -830,7 +813,7 @@ class EntryTree:
 
         """
         input_node_dict = node_dict.copy()
-        for node_name in input_node_dict.keys():
+        for node_name in input_node_dict:
             found_node = search(self.root, search_node_name=node_name)
             if found_node is not None:
                 while found_node.parent.name != "root":
@@ -893,8 +876,7 @@ def search(node: EntryTreeNode, search_node_name: str):
         return node
 
     for child in node.children:
-        tmp = search(child, search_node_name)
-        if tmp:
+        if tmp := search(child, search_node_name):
             return tmp
 
 
@@ -902,8 +884,8 @@ def traverse(node: EntryTreeNode, path: List[str]):
     path.append(repr(node))
     if len(node.children) == 0:
         print(path)
-        path.pop()
     else:
         for child in node.children:
             traverse(child, path)
-        path.pop()
+
+    path.pop()

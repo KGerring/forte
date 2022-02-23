@@ -185,7 +185,7 @@ def is_composite_type(item_type: str):
 
 
 def valid_composite_key(item_type: str):
-    return item_type in ("int", "str")
+    return item_type in {"int", "str"}
 
 
 class OntologyCodeGenerator:
@@ -269,9 +269,9 @@ class OntologyCodeGenerator:
         # Adjacency list to store the allowed types (in-built or user-defined),
         # and their attributes (if any) in order to validate the attribute
         # types.
-        self.allowed_types_tree: Dict[str, Set] = {}
-        for type_str in ALL_INBUILT_TYPES:
-            self.allowed_types_tree[type_str] = set()
+        self.allowed_types_tree: Dict[str, Set] = {
+            type_str: set() for type_str in ALL_INBUILT_TYPES
+        }
 
         self.installed_forte_dir = utils.get_installed_forte_dir()
         self.exclude_from_writing: Set[str] = set()
@@ -363,21 +363,24 @@ class OntologyCodeGenerator:
                     manager.add_object_to_import(full_name)
 
             # Adding all the module objects defined in `__all__` to imports.
-            if isinstance(elem, ast.Assign) and len(elem.targets) > 0:
-                if elem.targets[0].id == "__all__":
-                    full_names.update(
-                        [
-                            (
-                                name.s,
-                                f"{base_ontology_module.__name__}.{name.s}",
-                            )
-                            for name in elem.value.elts
-                        ]
-                    )
+            if (
+                isinstance(elem, ast.Assign)
+                and len(elem.targets) > 0
+                and elem.targets[0].id == "__all__"
+            ):
+                full_names.update(
+                    [
+                        (
+                            name.s,
+                            f"{base_ontology_module.__name__}.{name.s}",
+                        )
+                        for name in elem.value.elts
+                    ]
+                )
 
-                    for name in elem.value.elts:
-                        full_class_name = f"{base_module_name}.{name.s}"
-                        manager.add_object_to_import(full_class_name)
+                for name in elem.value.elts:
+                    full_class_name = f"{base_module_name}.{name.s}"
+                    manager.add_object_to_import(full_class_name)
 
             # Adding `__init__` arguments for each class
             if isinstance(elem, ast.ClassDef):
@@ -391,16 +394,10 @@ class OntologyCodeGenerator:
                             elem_base_names.add(elem_base.value.id)
                             elem_base = elem_base.slice.value
                         elem_base_names.add(elem_base.id)
-                init_func = None
-
-                for func in elem.body:
-                    if (
+                init_func = next((func for func in elem.body if (
                         isinstance(func, ast.FunctionDef)
                         and func.name == "__init__"
-                    ):
-                        init_func = func
-                        break
-
+                    )), None)
                 if init_func is None:
                     warnings.warn(
                         f"No `__init__` function found in the class"
@@ -902,9 +899,10 @@ class OntologyCodeGenerator:
             if not is_empty and os.access(path, os.R_OK):
                 with open(path, "r", encoding="utf-8") as f:
                     lines = f.readlines()
-                    if len(lines) > 0:
-                        if lines[0].startswith(f"# {AUTO_GEN_SIGNATURE}"):
-                            is_empty = True
+                    if len(lines) > 0 and lines[0].startswith(
+                        f"# {AUTO_GEN_SIGNATURE}"
+                    ):
+                        is_empty = True
             if is_empty:
                 if delete_dir is not None:
                     shutil.copy(path, dst_dir)
@@ -953,8 +951,7 @@ class OntologyCodeGenerator:
         custom_init_args = copy.deepcopy(base_init_args)
 
         self.replace_annotation(entry_name, custom_init_args)
-        custom_init_args_str = as_init_str(custom_init_args)
-        return custom_init_args_str
+        return as_init_str(custom_init_args)
 
     def parse_entry(
         self, entry_name: EntryName, schema: Dict
@@ -1038,9 +1035,9 @@ class OntologyCodeGenerator:
         # For special classes that requires a constraint.
         core_bases: Set[str] = self.top_to_core_entries[base_entry]
         entry_constraint_keys: Dict[str, str] = {}
-        if any(item == "BaseLink" for item in core_bases):
+        if "BaseLink" in core_bases:
             entry_constraint_keys = DEFAULT_CONSTRAINTS_KEYS["BaseLink"]
-        elif any(item == "BaseGroup" for item in core_bases):
+        elif "BaseGroup" in core_bases:
             entry_constraint_keys = DEFAULT_CONSTRAINTS_KEYS["BaseGroup"]
 
         class_att_items: List[ClassTypeDefinition] = []

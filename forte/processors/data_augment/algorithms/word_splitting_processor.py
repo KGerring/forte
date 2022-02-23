@@ -58,7 +58,7 @@ class RandomWordSplitDataAugmentProcessor(ReplacementDataAugmentProcessor):
                 annotations.append(anno)
                 indexes.append(idx)
                 endings.append(anno.end)
-            if len(annotations) > 0:
+            if annotations:
                 annotation_to_split = random.sample(
                     [
                         (anno, idx)
@@ -82,12 +82,10 @@ class RandomWordSplitDataAugmentProcessor(ReplacementDataAugmentProcessor):
                     if src_idx != 0:
                         first_position = endings[src_idx - 1] + 1
                         second_position = endings[src_idx]
-                        word_split[1] = " " + word_split[1]
                     else:
                         first_position = 0
                         second_position = endings[0]
-                        word_split[1] = " " + word_split[1]
-
+                    word_split[1] = f" {word_split[1]}"
                     self._insert(word_split[1], data_pack, second_position)
                     self._delete(src_anno)
                     self._insert(word_split[0], data_pack, first_position)

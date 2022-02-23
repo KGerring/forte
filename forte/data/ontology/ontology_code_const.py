@@ -39,7 +39,6 @@ RESERVED_ATTRIBUTE_NAMES: Set[str] = {
     "span",
     "begin",
     "end",
-    "index_key",
     "parent",
     "child",
     "embedding",
@@ -48,6 +47,7 @@ RESERVED_ATTRIBUTE_NAMES: Set[str] = {
     "pack_id",
     "index_key",
 }
+
 
 REQUIRED_IMPORTS: List[str] = ["typing"]
 

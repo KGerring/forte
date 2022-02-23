@@ -110,14 +110,12 @@ class ForteHTMLParser(HTMLParser):
                     ):
                         break  # wait till we get all the text
                     j = n
+            elif match := self.interesting.search(rawdata, i):
+                j = match.start()
+            elif self.cdata_elem:
+                break
             else:
-                match = self.interesting.search(rawdata, i)  # < or &
-                if match:
-                    j = match.start()
-                else:
-                    if self.cdata_elem:
-                        break
-                    j = n
+                j = n
             if i < j:
                 if self.convert_charrefs and not self.cdata_elem:
                     self.handle_data(unescape(rawdata[i:j]))
@@ -164,8 +162,7 @@ class ForteHTMLParser(HTMLParser):
                         self.handle_data(rawdata[i:k])
                 i = self.updatepos(i, k)
             elif startswith("&#", i):
-                match = charref.match(rawdata, i)
-                if match:
+                if match := charref.match(rawdata, i):
                     name = match.group()[2:-1]
                     self.handle_charref(name)
                     k = match.end()
@@ -178,8 +175,7 @@ class ForteHTMLParser(HTMLParser):
                         i = self.updatepos(i, i + 2)
                     break
             elif startswith("&", i):
-                match = entityref.match(rawdata, i)
-                if match:
+                if match := entityref.match(rawdata, i):
                     name = match.group(1)
                     self.handle_entityref(name)
                     k = match.end()
@@ -187,15 +183,13 @@ class ForteHTMLParser(HTMLParser):
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
-                match = incomplete.match(rawdata, i)
-                if match:
+                if match := incomplete.match(rawdata, i):
                     # match.group() will contain at least 2 chars
                     if end and match.group() == rawdata[i:]:
                         k = match.end()
                         if k <= i:
                             k = n
                         i = self.updatepos(i, i + 1)
-                    # incomplete
                 elif (i + 1) < n:
                     # not the end of the buffer, and can't be confused
                     # with some other construct
@@ -207,7 +201,7 @@ class ForteHTMLParser(HTMLParser):
                 assert 0, "interesting.search() lied"
         # end while
         if end and i < n and not self.cdata_elem:
-            if self.convert_charrefs and not self.cdata_elem:
+            if self.convert_charrefs:
                 self.handle_data(unescape(rawdata[i:n]))
             else:
                 self.handle_data(rawdata[i:n])
@@ -258,8 +252,7 @@ class HTMLReader(PackReader):
             self.init_with_html = True
 
             def data_iterator(data):
-                for html_string in data:
-                    yield html_string
+                yield from data
 
             return data_iterator(content)
 
@@ -317,6 +310,5 @@ class HTMLReader(PackReader):
         # check if collection is file or html string
         if self.init_with_fileloc:
             return os.path.basename(collection)
-        # If html string
         else:
-            return str(hash(collection)) + ".html"
+            return f'{hash(collection)}.html'

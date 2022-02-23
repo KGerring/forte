@@ -194,8 +194,7 @@ class MultiPackDeserializerBase(MultiPackReader):
         Returns:
 
         """
-        for s in self._get_multipack_content(*args, **kwargs):
-            yield s
+        yield from self._get_multipack_content(*args, **kwargs)
 
     def _parse_pack(self, multi_pack_source: Any) -> Iterator[MultiPack]:
         m_pack: MultiPack = self._parse_multi_pack(multi_pack_source)

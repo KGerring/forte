@@ -34,8 +34,7 @@ class MSMarcoEvaluator(Evaluator[MultiPack]):
     def consume_next(self, pred_pack: MultiPack, _):
         query_pack: DataPack = pred_pack.get_pack(self.configs.pack_name)
         query = list(query_pack.get(Query))[0]
-        rank = 1
-        for pid, _ in query.results.items():
+        for rank, (pid, _) in enumerate(query.results.items(), start=1):
             doc_id: Optional[str] = query_pack.pack_name
             if doc_id is None:
                 raise ProcessExecutionException(
@@ -43,7 +42,6 @@ class MSMarcoEvaluator(Evaluator[MultiPack]):
                     "please double check the reader."
                 )
             self.predicted_results.append((doc_id, pid, str(rank)))
-            rank += 1
 
     def get_result(self):
         curr_dir = os.path.dirname(__file__)

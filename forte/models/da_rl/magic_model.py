@@ -69,7 +69,7 @@ class MetaModule(nn.ModuleList):
 
         for key, value in module._parameters.items():
             if value is not None:
-                self.register_parameter("_origin_" + key, value)
+                self.register_parameter(f"_origin_{key}", value)
                 self.register_buffer(key, value.data)
             else:
                 self.register_buffer(key, None)

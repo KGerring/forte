@@ -48,5 +48,5 @@ if __name__ == "__main__":
     )
 
     for idx, pack in enumerate(nlp.process_dataset(data_path)):
-        if idx + 1 > 0 and (idx + 1) % 10000 == 0:
+        if idx > -1 and (idx + 1) % 10000 == 0:
             print(f"Indexed {idx + 1} packs")

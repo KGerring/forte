@@ -184,8 +184,25 @@ class StaveProcessor(PackProcessor):
         ontology = self.resources.get("onto_specs_dict")
         entry_tree = self.resources.get("merged_entry_tree")
 
+        # Create legend configs
+        legend_configs: Dict[str, Any] = {}
+        entry_name_set: Set[str] = set()
+        for entry in ontology["definitions"]:
+            entry_name = entry["entry_name"]
+            entry_name_set.add(entry_name)
+            legend_configs[entry_name] = {
+                "is_selected": False,
+                "is_shown": True,
+            }
+            if "attributes" in entry and len(entry["attributes"]) > 0:
+                attributes_configs = {
+                    attribute["name"]: False
+                    for attribute in entry["attributes"]
+                    if attribute["type"] == "str"
+                }
+
+                legend_configs[entry_name]["attributes"] = attributes_configs
         configs: Dict[str, Any] = {
-            "legendConfigs": {},
             "scopeConfigs": {},
             "layoutConfigs": {
                 "center-middle": "default-nlp",
@@ -200,25 +217,8 @@ class StaveProcessor(PackProcessor):
                 "inputFormat": "string",
                 "expectedRecords": {},
             },
+            "legendConfigs": legend_configs,
         }
-
-        # Create legend configs
-        legend_configs: Dict[str, Any] = {}
-        entry_name_set: Set[str] = set()
-        for entry in ontology["definitions"]:
-            entry_name = entry["entry_name"]
-            entry_name_set.add(entry_name)
-            legend_configs[entry_name] = {
-                "is_selected": False,
-                "is_shown": True,
-            }
-            if "attributes" in entry and len(entry["attributes"]) > 0:
-                attributes_configs = {}
-                for attribute in entry["attributes"]:
-                    if attribute["type"] == "str":
-                        attributes_configs[attribute["name"]] = False
-                legend_configs[entry_name]["attributes"] = attributes_configs
-        configs["legendConfigs"] = legend_configs
 
         # Find all subclass of `forte.data.ontology.top.Annotation` and
         # update `scopeConfigs` accordingly.

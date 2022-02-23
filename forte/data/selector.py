@@ -71,12 +71,13 @@ class SinglePackSelector(Selector[MultiPack, DataPack]):
         reverse = self.configs.reverse_selection
 
         for name, pack in m_pack.iter_packs():
-            if reverse:
-                if not self.will_select(name, pack, m_pack):
-                    yield pack
-            else:
-                if self.will_select(name, pack, m_pack):
-                    yield pack
+            if (
+                reverse
+                and not self.will_select(name, pack, m_pack)
+                or not reverse
+                and self.will_select(name, pack, m_pack)
+            ):
+                yield pack
 
     def will_select(
         self, pack_name: str, pack: DataPack, multi_pack: MultiPack

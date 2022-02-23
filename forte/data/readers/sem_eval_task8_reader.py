@@ -120,7 +120,7 @@ class SemEvalTask8Reader(PackReader):
                 entry1 = EntityMention(pack, index1, index1 + len(e1))
                 entry2 = EntityMention(pack, index2, index2 + len(e2))
                 offset += len(sent_line) + 1
-                txt += sent_line + " "
+                txt += f'{sent_line} '
 
                 pair = relation_line[
                     relation_line.find("(") + 1 : relation_line.find(")")

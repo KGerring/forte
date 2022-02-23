@@ -203,10 +203,9 @@ class Vocabulary(Generic[ElementType]):
             The count of the element.
         """
         if not self.do_counting:
-            if not self.do_counting:
-                raise InvalidOperationException(
-                    "The vocabulary is not configured to count the elements."
-                )
+            raise InvalidOperationException(
+                "The vocabulary is not configured to count the elements."
+            )
 
         eid: int = e if isinstance(e, int) else self._element2id[e]
         if self.is_special_token(eid):
@@ -230,30 +229,29 @@ class Vocabulary(Generic[ElementType]):
               be assigned. Default is None, then its representation will be
               computed from the internal indexing.
         """
-        if element_name in ("PAD", "UNK"):
-            if element_name == "PAD":
-                self.use_pad = True
-            if element_name == "UNK":
-                self.use_unk = True
-            if element_id in self._id2element:
-                self._base_special_tokens[element_name] = self._id2element[
-                    element_id
-                ]
-            else:
-                raise ValueError(
-                    f"Supplied {element_id} is not in the"
-                    f" current vocabulary."
-                )
-
-            # Store the customized representation
-            if representation is not None:
-                self._id2repr[element_id] = representation
-        else:
+        if element_name not in ("PAD", "UNK"):
             raise ValueError(
                 f"{element_name} is not a required special element, you can"
                 f" add it in through `special_tokens` argument during class"
                 f" creation, or calling the `add_special_element` method"
             )
+        if element_name == "PAD":
+            self.use_pad = True
+        elif element_name == "UNK":
+            self.use_unk = True
+        if element_id in self._id2element:
+            self._base_special_tokens[element_name] = self._id2element[
+                element_id
+            ]
+        else:
+            raise ValueError(
+                f"Supplied {element_id} is not in the"
+                f" current vocabulary."
+            )
+
+        # Store the customized representation
+        if representation is not None:
+            self._id2repr[element_id] = representation
 
     def is_special_token(self, element_id: int):
         """Check whether the element is a special token."""
@@ -298,15 +296,14 @@ class Vocabulary(Generic[ElementType]):
                 )
             self._base_special_tokens[special_token_name] = element
 
-        if element_id is not None:
-            if element_id in self._id2element:
-                raise ValueError(
-                    f"ID {element_id} has already been used in Vocabulary. "
-                )
-        else:
+        if element_id is None:
             # Use auto-incremented id.
             element_id = self.__get_next_available_id()
 
+        elif element_id in self._id2element:
+            raise ValueError(
+                f"ID {element_id} has already been used in Vocabulary. "
+            )
         self._element2id[element] = element_id
         self._id2element[element_id] = element
 
@@ -423,10 +420,7 @@ class Vocabulary(Generic[ElementType]):
           representation of the element (could be Integer or One-hot vector,
           depending on the settings of this class).
         """
-        vocab_dict: Dict[ElementType, Any] = {}
-        for element in self._element2id:
-            vocab_dict[element] = self.element2repr(element)
-        return vocab_dict
+        return {element: self.element2repr(element) for element in self._element2id}
 
     def _one_hot(self, idx: int):
         """Compute the one-hot encoding on the fly."""

@@ -189,11 +189,7 @@ class Pipeline(Generic[PackType]):
         # needed for evaluator
         self._predict_to_gold: Dict[int, PackType] = {}
 
-        if resource is None:
-            self.resource = Resources()
-        else:
-            self.resource = resource
-
+        self.resource = Resources() if resource is None else resource
         if ontology_file is None:
             with resources.path(
                 "forte.ontology_specs", "base_ontology.json"
@@ -826,13 +822,7 @@ class Pipeline(Generic[PackType]):
             self.__component_set.add(component)
             self.component_configs.append(component.make_configs(config))
         else:
-            if config is None:
-                self._components.append(component)
-                # We insert a `None` value here just to make the config list
-                # to match the component list, but this config should not be
-                # used.
-                self.component_configs.append(None)
-            else:
+            if config is not None:
                 raise ProcessorConfigError(
                     f"The same instance of a component named {component.name} "
                     f" has already been added to"
@@ -843,6 +833,11 @@ class Pipeline(Generic[PackType]):
                     f" do not provide the `config` (or provide a `None`)."
                 )
 
+            self._components.append(component)
+            # We insert a `None` value here just to make the config list
+            # to match the component list, but this config should not be
+            # used.
+            self.component_configs.append(None)
         if selector is None:
             self._selectors.append(self.__default_selector)
             self._selectors_configs.append(self.__default_selector_config)
@@ -1004,7 +999,11 @@ class Pipeline(Generic[PackType]):
                 if isinstance(component, Caster):
                     # Replacing the job pack with the casted version.
                     raw_job.alter_pack(component.cast(pack))
-                elif isinstance(component, BaseBatchProcessor):
+                elif (
+                    isinstance(component, BaseBatchProcessor)
+                    or not isinstance(component, Evaluator)
+                    and isinstance(component, BaseProcessor)
+                ):
                     pack.set_control_component(component.name)
                     component.process(pack)
                 elif isinstance(component, Evaluator):
@@ -1012,12 +1011,6 @@ class Pipeline(Generic[PackType]):
                     component.consume_next(
                         pack, self._predict_to_gold[raw_job.id]
                     )
-                elif isinstance(component, BaseProcessor):
-                    # Should be BasePackProcessor:
-                    # All other processor are considered to be
-                    # streaming processor like this.
-                    pack.set_control_component(component.name)
-                    component.process(pack)
                 # After the component action, make sure the entry is
                 # added into the index.
                 pack.add_all_remaining_entries()
@@ -1212,26 +1205,25 @@ class Pipeline(Generic[PackType]):
                         # Move or yield the pack.
                         c_queue = list(current_queue)
                         for job_i in c_queue[: processed_queue_index + 1]:
-                            if job_i.status == ProcessJobStatus.PROCESSED:
-                                if should_yield:
-                                    if job_i.id in self._predict_to_gold:
-                                        self._predict_to_gold.pop(job_i.id)
-                                    # TODO: I don't know why these are
-                                    #  marked as incompatible type by mypy.
-                                    #  the same happens 3 times on every yield.
-                                    #  It is observed that the pack returned
-                                    #  from the `ProcessJob` is considered to
-                                    #  be different from `PackType`.
-                                    yield job_i.pack  # type: ignore
-                                else:
-                                    self._proc_mgr.add_to_queue(
-                                        queue_index=next_queue_index, job=job_i
-                                    )
-                            else:
+                            if job_i.status != ProcessJobStatus.PROCESSED:
                                 raise ProcessFlowException(
                                     f"The job status should be "
                                     f"{ProcessJobStatus.PROCESSED} "
                                     f"at this point."
+                                )
+                            if should_yield:
+                                if job_i.id in self._predict_to_gold:
+                                    self._predict_to_gold.pop(job_i.id)
+                                # TODO: I don't know why these are
+                                #  marked as incompatible type by mypy.
+                                #  the same happens 3 times on every yield.
+                                #  It is observed that the pack returned
+                                #  from the `ProcessJob` is considered to
+                                #  be different from `PackType`.
+                                yield job_i.pack  # type: ignore
+                            else:
+                                self._proc_mgr.add_to_queue(
+                                    queue_index=next_queue_index, job=job_i
                                 )
                             current_queue.popleft()
 
@@ -1252,10 +1244,6 @@ class Pipeline(Generic[PackType]):
                             self._proc_mgr.current_queue_index = (
                                 next_queue_index
                             )
-                # Besides Batch Processors, the other component type only
-                # deal with one pack at a time, these include: PackProcessor
-                # Evaluator, Caster.
-                # - Move them to the next queue
                 else:
                     self.__update_stream_job_status()
                     index = unprocessed_queue_indices[current_queue_index]
@@ -1266,23 +1254,22 @@ class Pipeline(Generic[PackType]):
                     else:
                         # current_queue is modified in this array
                         for job_i in list(current_queue):
-                            if job_i.status == ProcessJobStatus.PROCESSED:
-                                if should_yield:
-                                    if job_i.id in self._predict_to_gold:
-                                        self._predict_to_gold.pop(job_i.id)
-                                    yield job_i.pack  # type: ignore
-                                else:
-                                    self._proc_mgr.add_to_queue(
-                                        queue_index=next_queue_index, job=job_i
-                                    )
-                                current_queue.popleft()
-                            else:
+                            if job_i.status != ProcessJobStatus.PROCESSED:
                                 raise ProcessFlowException(
                                     f"The job status should be "
                                     f"{ProcessJobStatus.PROCESSED} "
                                     f"at this point."
                                 )
 
+                            if should_yield:
+                                if job_i.id in self._predict_to_gold:
+                                    self._predict_to_gold.pop(job_i.id)
+                                yield job_i.pack  # type: ignore
+                            else:
+                                self._proc_mgr.add_to_queue(
+                                    queue_index=next_queue_index, job=job_i
+                                )
+                            current_queue.popleft()
                         # set the UNPROCESSED index
                         # we do not use "processed_queue_indices" as the
                         # jobs get PROCESSED whenever they are passed
@@ -1363,8 +1350,7 @@ class Pipeline(Generic[PackType]):
         Args:
             ref_name(str): the reference name of a component
         """
-        p = self.components[self.ref_names[ref_name]]
-        return p
+        return self.components[self.ref_names[ref_name]]
 
 
 def serve(

@@ -41,8 +41,7 @@ class BasePointer:
         raise NotImplementedError
 
     def __getstate__(self):
-        state = self.__dict__.copy()
-        return state
+        return self.__dict__.copy()
 
 
 class EntryContainer(Generic[E, L, G]):

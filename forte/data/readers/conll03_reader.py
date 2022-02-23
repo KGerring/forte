@@ -165,7 +165,7 @@ class CoNLL03Reader(PackReader):
                     token.pos = pos
                     token.chunk = chunk_id
 
-                    text += word + " "
+                    text += f'{word} '
                     offset = word_end + 1
                     has_rows = True
                 else:

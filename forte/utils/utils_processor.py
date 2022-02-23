@@ -44,24 +44,23 @@ def record_types_and_attributes_check(
     if expectation is not None:
         # check if expected types are in input pack.
         for expected_t in expectation:
-            if expected_t not in input_pack_record.keys():
+            if expected_t not in input_pack_record:
                 raise ExpectedRecordNotFound(
                     f"The record type {expected_t} is not found in "
                     f"meta of the prediction datapack."
                 )
-            else:
-                expected_value = expectation.get(expected_t)
-                if expected_value is not None:
-                    for expected_t_v in expected_value:
-                        if expected_t_v not in input_pack_record.get(
-                            expected_t, []
-                        ):
-                            raise ExpectedRecordNotFound(
-                                f"The record attribute type "
-                                f"{expected_t_v} is not found in "
-                                f"attribute of record {expected_t} "
-                                f"in meta of the input datapack."
-                            )
+            expected_value = expectation.get(expected_t)
+            if expected_value is not None:
+                for expected_t_v in expected_value:
+                    if expected_t_v not in input_pack_record.get(
+                        expected_t, []
+                    ):
+                        raise ExpectedRecordNotFound(
+                            f"The record attribute type "
+                            f"{expected_t_v} is not found in "
+                            f"attribute of record {expected_t} "
+                            f"in meta of the input datapack."
+                        )
 
 
 def collect_input_pack_record(

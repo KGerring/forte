@@ -213,9 +213,7 @@ class TrainPreprocessor:
         dataset = DataPackDataset(
             data_source, schemes, self._config.dataset, self.device
         )
-        iterator = DataIterator(dataset)
-
-        return iterator
+        return DataIterator(dataset)
 
     @property
     def request(self) -> Dict:

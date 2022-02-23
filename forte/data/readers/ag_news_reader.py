@@ -54,8 +54,7 @@ class AGNewsReader(PackReader):
         Returns: Iterator of each line in the csv file.
         """
         with open(csv_file, "r", encoding="utf-8") as f:
-            for line_id, line in enumerate(f):
-                yield line_id, line
+            yield from enumerate(f)
 
     def _cache_key_function(self, line_info: Tuple[int, str]) -> str:
         return str(line_info[0])
@@ -92,14 +91,10 @@ class AGNewsReader(PackReader):
     def default_configs(cls):
         config: dict = super().default_configs()
 
-        config.update(
-            {
-                "class_names": {
+        config["class_names"] = {
                     1: "World",
                     2: "Sports",
                     3: "Business",
                     4: "Sci/Tech",
                 }
-            }
-        )
         return config

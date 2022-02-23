@@ -219,9 +219,8 @@ def prepare_rnn_seq(rnn_input, lengths, hx=None, masks=None, batch_first=False):
         lens, order = torch.sort(lengths, dim=0, descending=True)
         if torch.ne(lens, lengths).sum() == 0:
             return None
-        else:
-            _, rev_order = torch.sort(order)
-            return lens, order, rev_order
+        _, rev_order = torch.sort(order)
+        return lens, order, rev_order
 
     check_res = check_decreasing(lengths)
 

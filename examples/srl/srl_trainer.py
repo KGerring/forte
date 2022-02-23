@@ -59,9 +59,7 @@ class SRLTrainer(BaseTrainer):
         train_pl: Pipeline = Pipeline()
         train_pl.set_reader(srl_train_reader)
         train_pl.initialize()
-        pack_iterator = train_pl.process_dataset(self.train_path)
-
-        return pack_iterator
+        return train_pl.process_dataset(self.train_path)
 
     def train(self):
         schemes: Dict = self.train_preprocessor.request["schemes"]

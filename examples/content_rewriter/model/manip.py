@@ -134,7 +134,7 @@ def build_model(data_batch, data, step):
         print("==========step_stage is {}".format(step_stage))
         if step_stage <= 1:
             rec_weight = 1
-        elif step_stage > 1 and step_stage < 2:
+        elif step_stage < 2:
             rec_weight = Config.rec_w - step_stage * 0.1
         return np.array(rec_weight, dtype=tf.float32)
 
@@ -647,55 +647,52 @@ class Rewriter:
             hypo_file_name = os.path.join(
                 Config.dir_model, "hypos.step{}.{}.txt".format(step, mode)
             )
-            hypo_file = open(hypo_file_name, "w")
-
-            cnt = 0
-            while True:
-                try:
-                    target_texts, entry_texts, output_ids = self.sess.run(
-                        fetches, feed_dict
-                    )
-                    target_texts = [
-                        tx.utils.strip_special_tokens(
-                            texts[:, 1:].tolist(), is_token_list=True
+            with open(hypo_file_name, "w") as hypo_file:
+                cnt = 0
+                while True:
+                    try:
+                        target_texts, entry_texts, output_ids = self.sess.run(
+                            fetches, feed_dict
                         )
-                        for texts in target_texts
-                    ]
-                    entry_texts = [
-                        tx.utils.strip_special_tokens(
-                            texts[:, 1:].tolist(), is_token_list=True
+                        target_texts = [
+                            tx.utils.strip_special_tokens(
+                                texts[:, 1:].tolist(), is_token_list=True
+                            )
+                            for texts in target_texts
+                        ]
+                        entry_texts = [
+                            tx.utils.strip_special_tokens(
+                                texts[:, 1:].tolist(), is_token_list=True
+                            )
+                            for texts in entry_texts
+                        ]
+
+                        output_ids = output_ids[:, :, 0]
+                        output_texts = tx.utils.map_ids_to_strs(
+                            ids=output_ids.tolist(),
+                            vocab=self.datasets[mode].vocab("y_aux"),
+                            join=False,
                         )
-                        for texts in entry_texts
-                    ]
 
-                    output_ids = output_ids[:, :, 0]
-                    output_texts = tx.utils.map_ids_to_strs(
-                        ids=output_ids.tolist(),
-                        vocab=self.datasets[mode].vocab("y_aux"),
-                        join=False,
-                    )
+                        target_texts = list(zip(*target_texts))
+                        entry_texts = list(zip(*entry_texts))
+                        for ref, hypo in zip(target_texts, output_texts):
+                            if cnt < 10:
+                                print("cnt = {}".format(cnt))
+                                for i, s in enumerate(ref):
+                                    print("ref{}: {}".format(i, " ".join(s)))
+                                print("hypo: {}".format(" ".join(hypo)))
+                                return "{}".format(" ".join(hypo))
+                            print(" ".join(hypo), file=hypo_file)
+                            cnt += 1
+                        print("processed {} samples".format(cnt))
 
-                    target_texts = list(zip(*target_texts))
-                    entry_texts = list(zip(*entry_texts))
-                    for ref, hypo in zip(target_texts, output_texts):
-                        if cnt < 10:
-                            print("cnt = {}".format(cnt))
-                            for i, s in enumerate(ref):
-                                print("ref{}: {}".format(i, " ".join(s)))
-                            print("hypo: {}".format(" ".join(hypo)))
-                            return "{}".format(" ".join(hypo))
-                        print(" ".join(hypo), file=hypo_file)
-                        cnt += 1
-                    print("processed {} samples".format(cnt))
+                        ref_hypo_pairs.extend(
+                            zip(target_texts, entry_texts, output_texts)
+                        )
 
-                    ref_hypo_pairs.extend(
-                        zip(target_texts, entry_texts, output_texts)
-                    )
-
-                except tf.errors.OutOfRangeError:
-                    break
-
-            hypo_file.close()
+                    except tf.errors.OutOfRangeError:
+                        break
 
             refs, entrys, hypos = zip(*ref_hypo_pairs)
 
@@ -719,12 +716,11 @@ class Rewriter:
             self.summary_writer.flush()
 
             bleu = bleus[0]
-            if mode == "val":
-                if bleu > self.best_ever_val_bleu:
-                    self.best_ever_val_bleu = bleu
-                    print("updated best val bleu: {}".format(bleu))
+            if mode == "val" and bleu > self.best_ever_val_bleu:
+                self.best_ever_val_bleu = bleu
+                print("updated best val bleu: {}".format(bleu))
 
-                    self.save_to(Config.ckpt_best, step)
+                self.save_to(Config.ckpt_best, step)
 
             print("end _eval_epoch")
             return
@@ -753,8 +749,8 @@ class Rewriter:
             )
 
             epoch = 0
+            name = "joint"
             while epoch < Config.config_train.max_epochs:
-                name = "joint"
                 train_op = self.train_ops[name]
                 summary_op = self.summary_ops[name]
 

@@ -31,9 +31,7 @@ def load_reference_from_stream(f):
         try:
             l = l.strip().split("\t")
             qid = int(l[0])
-            if qid in qids_to_relevant_passageids:
-                pass
-            else:
+            if qid not in qids_to_relevant_passageids:
                 qids_to_relevant_passageids[qid] = []
             qids_to_relevant_passageids[qid].append(int(l[1]))
         except:
@@ -63,9 +61,7 @@ def load_candidate_from_stream(f):
             qid = int(l[0])
             pid = int(l[1])
             rank = int(l[2])
-            if qid in qid_to_ranked_candidate_passages:
-                pass
-            else:
+            if qid not in qid_to_ranked_candidate_passages:
                 # By default, all PIDs in the list of 1000 are 0. Only override those that are given
                 tmp = [0] * 1000
                 qid_to_ranked_candidate_passages[qid] = tmp
@@ -107,15 +103,10 @@ def quality_checks_qids(
     # Check that we do not have multiple passages per query
     for qid in qids_to_ranked_candidate_passages:
         # Remove all zeros from the candidates
-        duplicate_pids = set(
-            [
-                item
-                for item, count in Counter(
-                    qids_to_ranked_candidate_passages[qid]
-                ).items()
-                if count > 1
-            ]
-        )
+        duplicate_pids = {item for item, count in Counter(
+                            qids_to_ranked_candidate_passages[qid]
+                        ).items()
+                        if count > 1}
 
         if len(duplicate_pids - set([0])) > 0:
             message = "Cannot rank a passage multiple times for a single query. QID={qid}, PID={pid}".format(
@@ -137,7 +128,6 @@ def compute_metrics(
     Returns:
         dict: dictionary of metrics {'MRR': <MRR Score>}
     """
-    all_scores = {}
     MRR = 0
     qids_with_relevant_passages = 0
     ranking = []
@@ -146,21 +136,22 @@ def compute_metrics(
             ranking.append(0)
             target_pid = qids_to_relevant_passageids[qid]
             candidate_pid = qids_to_ranked_candidate_passages[qid]
-            for i in range(0, MaxMRRRank):
+            for i in range(MaxMRRRank):
                 if candidate_pid[i] in target_pid:
                     MRR += 1 / (i + 1)
                     ranking.pop()
                     ranking.append(i + 1)
                     break
-    if len(ranking) == 0:
+    if not ranking:
         raise IOError(
             "No matching QIDs found. Are you sure you are scoring the evaluation set?"
         )
 
-    MRR = MRR / len(qids_to_relevant_passageids)
-    all_scores["MRR @10"] = MRR
-    all_scores["QueriesRanked"] = len(qids_to_ranked_candidate_passages)
-    return all_scores
+    MRR /= len(qids_to_relevant_passageids)
+    return {
+        "MRR @10": MRR,
+        "QueriesRanked": len(qids_to_ranked_candidate_passages),
+    }
 
 
 def compute_metrics_from_files(

@@ -84,10 +84,7 @@ class VocabularyTest(unittest.TestCase):
 
             recovered_elements = []
             for rep in representation:
-                if method == "indexing":
-                    idx = rep
-                else:
-                    idx = self.argmax(rep)
+                idx = rep if method == "indexing" else self.argmax(rep)
                 recovered_elements.append(vocab.id2element(idx))
 
             self.assertListEqual(elements, recovered_elements)
@@ -106,10 +103,7 @@ class VocabularyTest(unittest.TestCase):
 
             # check PAD_ELEMENT
             if need_pad:
-                if method == "indexing":
-                    expected_pad_repr = 0
-                else:
-                    expected_pad_repr = [0] * (len(vocab) - 1)
+                expected_pad_repr = 0 if method == "indexing" else [0] * (len(vocab) - 1)
                 self.assertEqual(
                     expected_pad_repr, vocab.element2repr(SpecialTokens.PAD)
                 )

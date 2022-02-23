@@ -85,9 +85,7 @@ class BertBasedQueryCreator(QueryProcessor):
             sequence_length=sequence_length,
             segment_ids=segment_ids,
         )
-        cls_token = output[:, 0, :]
-
-        return cls_token
+        return output[:, 0, :]
 
     def _build_query(self, text: str) -> np.ndarray:
         (input_ids, segment_ids, input_mask,) = self.tokenizer.encode_text(

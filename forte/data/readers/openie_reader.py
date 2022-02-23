@@ -125,5 +125,5 @@ class OpenIEReader(PackReader):
         config: dict = super().default_configs()
 
         # Add OIE dataset file extension. The default is '.oie'
-        config.update({"oie_file_extension": "oie"})
+        config["oie_file_extension"] = "oie"
         return config

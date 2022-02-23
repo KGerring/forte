@@ -269,9 +269,7 @@ class Converter:
         # (feature_dim, feature_num, feature_mask1, [feature_mask2, ...])
         masks_list: List[List[Any]] = []
         for i in range(features[0].dim):
-            curr_dim_masks = []
-            for mask in masks_per_example_list:
-                curr_dim_masks.append(mask[i])
+            curr_dim_masks = [mask[i] for mask in masks_per_example_list]
             masks_list.append(curr_dim_masks)
 
         # Convert to target type
@@ -281,21 +279,20 @@ class Converter:
         # Note: to_torch == True overwrite to_numpy option
         if self.to_torch:
             data_tensor: torch.Tensor = self._to_tensor_type(data_list, dtype)
-            masks_tensor_list: List[torch.Tensor] = []
-            for batch_masks_dim_i in masks_list:
-                masks_tensor_list.append(
-                    self._to_tensor_type(batch_masks_dim_i, np.bool)
-                )
+            masks_tensor_list: List[torch.Tensor] = [
+                self._to_tensor_type(batch_masks_dim_i, np.bool)
+                for batch_masks_dim_i in masks_list
+            ]
 
             return data_tensor, masks_tensor_list
 
         if self.to_numpy:
             data_np: np.ndarray = self._to_numpy_type(data_list, dtype)
-            masks_np_list: List[np.ndarray] = []
-            for batch_masks_dim_i in masks_list:
-                masks_np_list.append(
-                    self._to_numpy_type(batch_masks_dim_i, np.bool)
-                )
+            masks_np_list: List[np.ndarray] = [
+                self._to_numpy_type(batch_masks_dim_i, np.bool)
+                for batch_masks_dim_i in masks_list
+            ]
+
             return data_np, masks_np_list
 
         # Control should not reach here

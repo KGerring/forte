@@ -27,9 +27,7 @@ class DummyObject:
         self.b = b
 
     def __eq__(self, other):
-        if self.a == other.a and self.b == other.b:
-            return True
-        return False
+        return self.a == other.a and self.b == other.b
 
 
 class ResourcesTest(unittest.TestCase):

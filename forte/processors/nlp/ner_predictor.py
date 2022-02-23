@@ -153,9 +153,10 @@ class CoNLLNERPredictor(RequestPackingProcessor):
 
         for i in range(len(tokens["tid"])):
             tids = tokens["tid"][i]
-            ner_tags = []
-            for j in range(len(tids)):
-                ner_tags.append(self.ner_alphabet.get_instance(preds[i][j]))
+            ner_tags = [
+                self.ner_alphabet.get_instance(preds[i][j])
+                for j in range(len(tids))
+            ]
 
             pred["Token"]["ner"].append(np.array(ner_tags))
             pred["Token"]["tid"].append(np.array(tids))
@@ -203,11 +204,8 @@ class CoNLLNERPredictor(RequestPackingProcessor):
                 assert isinstance(token_ner, str)
                 if token_ner[0] == "B":
                     current_entity_mention = (token.begin, token_ner[2:])
-                elif token_ner[0] == "I":
+                elif token_ner[0] in ["I", "O"]:
                     continue
-                elif token_ner[0] == "O":
-                    continue
-
                 elif token_ner[0] == "E":
                     if token_ner[2:] != current_entity_mention[1]:
                         continue
@@ -249,10 +247,8 @@ class CoNLLNERPredictor(RequestPackingProcessor):
               length of each sentences in the batch
         """
         batch_size = len(data)
-        batch_length = max([len(d[0]) for d in data])
-        char_length = max(
-            [max([len(charseq) for charseq in d[1]]) for d in data]
-        )
+        batch_length = max(len(d[0]) for d in data)
+        char_length = max(max(len(charseq) for charseq in d[1]) for d in data)
 
         char_length = min(
             self.config_data.max_char_length,

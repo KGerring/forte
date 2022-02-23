@@ -88,12 +88,9 @@ class CoNLL03ReaderPipelineTest(unittest.TestCase):
                 tokens = [token.text for token in pack.get(Token, sentence)]
                 self.assertEqual(expected_sentence, tokens)
 
-                i = 0
-                for ner in pack.get(EntityMention, sentence):
+                for i, ner in enumerate(pack.get(EntityMention, sentence)):
                     self.assertEqual(expected_token[i], ner.text)
                     self.assertEqual(expected_ner_type[i], ner.ner_type)
-                    i += 1
-
         self.assertTrue(doc_exists)
 
 

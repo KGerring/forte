@@ -97,10 +97,7 @@ class Meta(BaseMeta):
         self.sample_rate: Optional[int] = sample_rate
         self.record: Dict[str, Set[str]] = {}
         self.info: Dict[str, str]
-        if info is None:
-            self.info = {}
-        else:
-            self.info = info
+        self.info = {} if info is None else info
 
 
 def as_entry_type(entry_type: Union[str, Type[EntryType]]):
@@ -529,7 +526,6 @@ class DataPack(BasePack[Entry, Link, Group]):
             if len(self.__processed_original_spans) == 0:
                 return input_index
 
-            len_processed_text = len(self._text)
             orig_index = None
             prev_end = 0
             for (
@@ -541,11 +537,9 @@ class DataPack(BasePack[Entry, Link, Group]):
                 if prev_end <= input_index < inverse_span.begin:
                     increment = original_span.begin - inverse_span.begin
                     orig_index = input_index + increment
-                # check if the input_index lies between one of the processed
-                # spans
                 elif inverse_span.begin <= input_index < inverse_span.end:
                     # look backward - backward shift of input_index
-                    if is_begin_index and mode in ["backward", "relaxed"]:
+                    if is_begin_index and mode in {"backward", "relaxed"}:
                         orig_index = original_span.begin
                     if not is_begin_index and mode == "backward":
                         orig_index = original_span.begin - 1
@@ -553,7 +547,7 @@ class DataPack(BasePack[Entry, Link, Group]):
                     # look forward - forward shift of input_index
                     if is_begin_index and mode == "forward":
                         orig_index = original_span.end
-                    if not is_begin_index and mode in ["forward", "relaxed"]:
+                    if not is_begin_index and mode in {"forward", "relaxed"}:
                         orig_index = original_span.end - 1
 
                 # break if the original index is populated
@@ -567,6 +561,7 @@ class DataPack(BasePack[Entry, Link, Group]):
                 inverse_span, original_span = self.__processed_original_spans[
                     -1
                 ]
+                len_processed_text = len(self._text)
                 if inverse_span.end <= input_index < len_processed_text:
                     increment = original_span.end - inverse_span.end
                     orig_index = input_index + increment
@@ -657,14 +652,13 @@ class DataPack(BasePack[Entry, Link, Group]):
                         f"set text for the data pack. Please set the text "
                         f"before calling `add_entry` on the annotations."
                     )
-                else:
-                    pack_ref = entry.pack.pack_id
-                    raise ValueError(
-                        f"The end {end} of span is greater than the text "
-                        f"length {len(self.text)}, which is invalid. The "
-                        f"problematic entry is of type {entry.__class__} "
-                        f"at [{begin}:{end}], in pack {pack_ref}."
-                    )
+                pack_ref = entry.pack.pack_id
+                raise ValueError(
+                    f"The end {end} of span is greater than the text "
+                    f"length {len(self.text)}, which is invalid. The "
+                    f"problematic entry is of type {entry.__class__} "
+                    f"at [{begin}:{end}], in pack {pack_ref}."
+                )
 
         elif isinstance(entry, Link):
             target = self.links
@@ -730,11 +724,14 @@ class DataPack(BasePack[Entry, Link, Group]):
 
         begin: int = target.bisect_left(entry)
 
-        index_to_remove = -1
-        for i, e in enumerate(target[begin:]):
-            if e.tid == entry.tid:
-                index_to_remove = begin + i
-                break
+        index_to_remove = next(
+            (
+                begin + i
+                for i, e in enumerate(target[begin:])
+                if e.tid == entry.tid
+            ),
+            -1,
+        )
 
         if index_to_remove < 0:
             logger.warning(
@@ -1070,8 +1067,7 @@ class DataPack(BasePack[Entry, Link, Group]):
 
         components, unit, fields = self._parse_request_args(a_type, a_args)
 
-        a_dict: Dict[str, Any] = {}
-        a_dict["span"] = []
+        a_dict: Dict[str, Any] = {"span": []}
         # For AudioAnnotation, since the data is single numpy array
         # we don't initialize an empty list for a_dict["audio"]
         if issubclass(a_type, Annotation):
@@ -1156,9 +1152,7 @@ class DataPack(BasePack[Entry, Link, Group]):
         if unit is not None:
             raise ValueError(f"Link entries cannot be indexed by {unit}.")
 
-        a_dict: Dict[str, Any] = {}
-        for field in fields:
-            a_dict[field] = []
+        a_dict: Dict[str, Any] = {field: [] for field in fields}
         a_dict["parent"] = []
         a_dict["child"] = []
 

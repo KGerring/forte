@@ -118,12 +118,11 @@ class SiameseBert(nn.Module):
 def _compute_loss(logits, labels):
     r"""Compute loss."""
 
-    loss = F.cross_entropy(
+    return F.cross_entropy(
         logits.view(-1, chatbot_bert.num_classes),
         labels.view(-1),
         reduction="mean",
     )
-    return loss
 
 
 def _train_epoch():

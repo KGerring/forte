@@ -110,16 +110,15 @@ class PretrainedEncoder(PackProcessor):
 
     # pylint: disable=unused-argument
     def initialize(self, resources: Resources, configs: Config):
-        if configs.pretrained_model_name in self.name2tokenizer:
-            self.tokenizer = self.name2tokenizer[configs.pretrained_model_name](
-                pretrained_model_name=configs.pretrained_model_name
-            )
-            self.encoder = self.name2encoder[configs.pretrained_model_name](
-                pretrained_model_name=configs.pretrained_model_name
-            )
-        else:
+        if configs.pretrained_model_name not in self.name2tokenizer:
             raise ValueError("Unrecognized pre-trained model name.")
 
+        self.tokenizer = self.name2tokenizer[configs.pretrained_model_name](
+            pretrained_model_name=configs.pretrained_model_name
+        )
+        self.encoder = self.name2encoder[configs.pretrained_model_name](
+            pretrained_model_name=configs.pretrained_model_name
+        )
         self.entry_type = get_class(configs.entry_type)
         if not isinstance(self.entry_type, Annotation) and not issubclass(
             self.entry_type, Annotation

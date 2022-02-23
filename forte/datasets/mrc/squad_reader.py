@@ -39,7 +39,7 @@ class SquadReader(PackReader):
     Phrase are MRC answers marked as text spans. Each MRCQuestion has a list of answers.
     """
 
-    def _collect(self, file_path: str) -> Iterator[Any]:  # type: ignore
+    def _collect(self, file_path: str) -> Iterator[Any]:    # type: ignore
         r"""Given file_path to the dataset, return an iterator to every data point in it.
 
         Args:
@@ -51,10 +51,8 @@ class SquadReader(PackReader):
             jsonf = json.load(file)
             for dic in jsonf["data"]:
                 title = dic["title"]
-                cnt = 0
-                for qa_dic in dic["paragraphs"]:
+                for cnt, qa_dic in enumerate(dic["paragraphs"]):
                     yield title + str(cnt), qa_dic["qas"], qa_dic["context"]
-                    cnt += 1
 
     def _cache_key_function(self, text_file: str) -> str:
         return os.path.basename(text_file)

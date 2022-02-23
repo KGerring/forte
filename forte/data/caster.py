@@ -65,7 +65,7 @@ class MultiPackBoxer(Caster[DataPack, MultiPack]):
 
         """
         # p = MultiPack()
-        pack_name = pack.pack_name + "_multi" if pack.pack_name else None
+        pack_name = f'{pack.pack_name}_multi' if pack.pack_name else None
         # if pack_name in p._name_index:
         #     raise ValueError(f"The name {pack_name} has already been taken.")
         p = MultiPack(pack_name=pack_name)
@@ -102,8 +102,7 @@ class MultiPackUnboxer(Caster[MultiPack, DataPack]):
         """
 
         if self.configs.pack_index < pack.num_pack:
-            p = pack.get_pack_at(self.configs.pack_index)
-            return p
+            return pack.get_pack_at(self.configs.pack_index)
         else:
             raise IndexError(
                 f"pack_index: {self.configs.pack_index} is not in this multi-pack."

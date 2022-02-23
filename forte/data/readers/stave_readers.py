@@ -217,12 +217,12 @@ class StaveDataPackSqlReader(PackReader):
         c = self.conn.cursor()
 
         pack: str = self.configs.datapack_table
-        project: str = self.configs.project_table
-
         if self.configs.target_project_name is None:
             # Read all documents in the database.
             query = f"SELECT textPack FROM {pack}"
         else:
+            project: str = self.configs.project_table
+
             # Read the specific project.
             query = (
                 f"SELECT textPack FROM {pack}, {project} "

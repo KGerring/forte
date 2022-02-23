@@ -199,9 +199,10 @@ class BioSeqTaggingExtractor(BaseExtractor):
         pad_value = self.get_pad_value()
         if self.vocab:
             # Use the vocabulary to map data into representation.
-            vocab_mapped: List[Union[int, List[int]]] = []
-            for pair in instance_tagged:
-                vocab_mapped.append(self.element2repr(pair))
+            vocab_mapped: List[Union[int, List[int]]] = [
+                self.element2repr(pair) for pair in instance_tagged
+            ]
+
             raw_data: List = vocab_mapped
             if self.config.is_bert:
                 raw_data = [pad_value] + raw_data + [pad_value]
@@ -234,11 +235,8 @@ class BioSeqTaggingExtractor(BaseExtractor):
                 data are extracted within its range. If None, then the
                 whole data pack will be used as the context. Default is None.
         """
-        all_entries: List[Entry] = []
         entry: Entry
-        for entry in pack.get(self.config.entry_type, context):
-            all_entries.append(entry)
-
+        all_entries: List[Entry] = list(pack.get(self.config.entry_type, context))
         for e in all_entries:
             pack.delete_entry(e)
 
@@ -292,11 +290,8 @@ class BioSeqTaggingExtractor(BaseExtractor):
                     entity_mention = self._entry_type(pack, tag_start, tag_end)
                     setattr(entity_mention, self._attribute, tag_type)
                 tag_start = entry.begin
-                tag_end = entry.end
                 tag_type = tag[0]
-            else:
-                tag_end = entry.end
-
+            tag_end = entry.end
         # Handle the final tag
         if tag_type and tag_start and tag_end:
             entity_mention = self._entry_type(

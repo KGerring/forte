@@ -35,7 +35,7 @@ class StringReader(PackReader):
 
     # pylint: disable=unused-argument
     def _cache_key_function(self, collection) -> str:
-        return str(hash(collection)) + ".html"
+        return f'{hash(collection)}.html'
 
     def _collect(  # type: ignore
         self, string_data: Union[List[str], str]
@@ -43,13 +43,9 @@ class StringReader(PackReader):
         r"""``string`_data` should be of type `List[str]`,
         which is the list of raw text strings to iterate over.
         """
-        # This allows the user to pass in either one single string or a list of
-        # strings.
-        data_strings = (
+        yield from (
             [string_data] if isinstance(string_data, str) else string_data
         )
-        for data in data_strings:
-            yield data
 
     def _parse_pack(self, data_source: str) -> Iterator[DataPack]:
         r"""Takes a raw string and converts into a :class:`DataPack`.

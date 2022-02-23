@@ -159,7 +159,7 @@ class PackWriter(PackProcessor, ABC):
 
     def _process(self, input_pack: DataPack):
         sub_path = self.sub_output_path(input_pack)
-        if sub_path is not None and not sub_path == "":
+        if sub_path is not None and sub_path != "":
             # Sub path could be empty, which we will skip writing the file.
             maybe_create_dir(self.configs.output_dir)
             write_pack(

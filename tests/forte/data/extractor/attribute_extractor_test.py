@@ -64,9 +64,10 @@ class AttributeExtractorTest(unittest.TestCase):
 
         # Check extract
         for pack in pipeline.process_dataset(self.dataset_path):
-            features = []
-            for instance in pack.get(Sentence):
-                features.append(extractor.extract(pack, instance))
+            features = [
+                extractor.extract(pack, instance)
+                for instance in pack.get(Sentence)
+            ]
 
             for feat in features:
                 recovered = [extractor.id2element(idx) for idx in feat.data[0]]

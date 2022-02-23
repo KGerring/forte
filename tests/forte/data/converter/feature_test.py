@@ -179,7 +179,7 @@ class FeatureTest(unittest.TestCase):
         pad_id: int = 0 if pad_id is None else pad_id
         dim: int = 1 if dim is None else dim
         dtype = torch.long if dtype is None else dtype
-        feature: Feature = Feature(
+        return Feature(
             data,
             {
                 "pad_value": pad_id,
@@ -188,8 +188,6 @@ class FeatureTest(unittest.TestCase):
                 "need_pad": need_pad,
             },
         )
-
-        return feature
 
     def create_feature2(
         self, data=None, pad_id=None, dim=None, need_pad=True, dtype=None
@@ -200,7 +198,7 @@ class FeatureTest(unittest.TestCase):
         pad_id: int = 0 if pad_id is None else pad_id
         dim: int = 2 if dim is None else dim
         dtype = torch.long if dtype is None else dtype
-        feature: Feature = Feature(
+        return Feature(
             data,
             {
                 "pad_value": pad_id,
@@ -209,8 +207,6 @@ class FeatureTest(unittest.TestCase):
                 "need_pad": need_pad,
             },
         )
-
-        return feature
 
     def create_feature3(
         self, data=None, pad_id=None, dim=None, need_pad=True, dtype=torch.long
@@ -222,7 +218,7 @@ class FeatureTest(unittest.TestCase):
         )
         pad_id: List = [0, 0, 1] if pad_id is None else pad_id
         dim: int = 2 if dim is None else dim
-        feature: Feature = Feature(
+        return Feature(
             data,
             {
                 "pad_value": pad_id,
@@ -231,8 +227,6 @@ class FeatureTest(unittest.TestCase):
                 "need_pad": need_pad,
             },
         )
-
-        return feature
 
 
 if __name__ == "__main__":

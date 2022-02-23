@@ -192,7 +192,7 @@ class OntonotesReader(PackReader):
         """
         config: dict = super().default_configs()
 
-        config.update({"column_format": cls._DEFAULT_FORMAT})
+        config["column_format"] = cls._DEFAULT_FORMAT
         return config
 
     def _collect(self, conll_directory: str) -> Iterator[Any]:  # type: ignore
@@ -210,14 +210,16 @@ class OntonotesReader(PackReader):
 
     def _parse_line(self, line: str) -> "_ParsedFields":
         parts = line.split()
-        fields = {}
         if self._star_pos is not None:
             l = self._star_pos
             r = len(parts) - (len(self._column_format) - self._star_pos - 1)
             parts = parts[:l] + [parts[l:r]] + parts[r:]  # type: ignore
-        for field, part in zip(self._column_format, parts):
-            if field is not None:
-                fields[field] = part
+        fields = {
+            field: part
+            for field, part in zip(self._column_format, parts)
+            if field is not None
+        }
+
         return self._ParsedFields(**fields)  # type: ignore
 
     def _parse_pack(self, file_path: str) -> Iterator[DataPack]:
@@ -455,9 +457,7 @@ class OntonotesReader(PackReader):
             i: int = 0
             while i < len(label):
                 c: str = label[i]
-                if c == "*":
-                    i += 1
-                elif c == "(":
+                if c == "(":
                     # New argument span.
                     j: int = i + 1
                     while j < len(label):
@@ -480,16 +480,16 @@ class OntonotesReader(PackReader):
 
                     arg_begin, arg_type = stack.pop()
 
-                    if not stack:
-                        # The outer most span will be stored into data pack
-                        if arg_type != "V":
-                            pred_arg = PredicateArgument(
-                                pack, arg_begin, word_end
-                            )
+                    if not stack and arg_type != "V":
+                        pred_arg = PredicateArgument(
+                            pack, arg_begin, word_end
+                        )
 
-                            verbal_pred_args[label_index].append(
-                                (pred_arg, arg_type)
-                            )
+                        verbal_pred_args[label_index].append(
+                            (pred_arg, arg_type)
+                        )
+                    i += 1
+                elif c == "*":
                     i += 1
 
     def _process_coref_annotations(

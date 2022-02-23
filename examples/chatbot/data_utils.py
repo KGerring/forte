@@ -22,25 +22,23 @@ def split_train_eval_test(file_name):
         file_name (str): File path to the dataset
     """
 
-    text_file = open(file_name, "r")
-    text_data = []
-    conversation = None
+    with open(file_name, "r") as text_file:
+        text_data = []
+        conversation = None
 
-    for line in text_file:
-        pair = line.rstrip("\n").split("\t")
-        num, question = pair[0].split(" ", 1)
-        answer = pair[1]
+        for line in text_file:
+            pair = line.rstrip("\n").split("\t")
+            num, question = pair[0].split(" ", 1)
+            answer = pair[1]
 
-        if num == "1":
-            if conversation:
-                text_data.append(conversation)
-            conversation = [[question, answer]]
-        else:
-            conversation.append([question, answer])
+            if num == "1":
+                if conversation:
+                    text_data.append(conversation)
+                conversation = [[question, answer]]
+            else:
+                conversation.append([question, answer])
 
-    text_data.append(conversation)
-
-    text_file.close()
+        text_data.append(conversation)
 
     logging.info("Total number of conversation is %s.", len(text_data))
 
@@ -48,7 +46,7 @@ def split_train_eval_test(file_name):
     num_val = 500
     num_test = 500
 
-    train_data = text_data[0:num_train]
+    train_data = text_data[:num_train]
     val_data = text_data[num_train : num_train + num_val]
     test_data = text_data[num_train + num_val : num_train + num_val + num_test]
 

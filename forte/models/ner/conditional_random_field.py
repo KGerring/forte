@@ -116,76 +116,65 @@ def is_transition_allowed(
         # Cannot transition into START or from END
         return False
 
-    if constraint_type == "BIOUL":
+    if constraint_type == "BIO":
         if from_tag == "START":
-            return to_tag in ("O", "B", "U")
+            return to_tag in {"O", "B"}
         if to_tag == "END":
-            return from_tag in ("O", "L", "U")
+            return from_tag in {"O", "B", "I"}
         return any(
             [
-                # O can transition to O, B-* or U-*
-                # L-x can transition to O, B-*, or U-*
-                # U-x can transition to O, B-*, or U-*
-                from_tag in ("O", "L", "U") and to_tag in ("O", "B", "U"),
-                # B-x can only transition to I-x or L-x
-                # I-x can only transition to I-x or L-x
-                from_tag in ("B", "I")
-                and to_tag in ("I", "L")
-                and from_entity == to_entity,
-            ]
-        )
-    elif constraint_type == "BIO":
-        if from_tag == "START":
-            return to_tag in ("O", "B")
-        if to_tag == "END":
-            return from_tag in ("O", "B", "I")
-        return any(
-            [
-                # Can always transition to O or B-x
-                to_tag in ("O", "B"),
-                # Can only transition to I-x from B-x or I-x
+                to_tag in {"O", "B"},
                 to_tag == "I"
-                and from_tag in ("B", "I")
+                and from_tag in {"B", "I"}
                 and from_entity == to_entity,
             ]
         )
-    elif constraint_type == "IOB1":
+
+    elif constraint_type == "BIOUL":
         if from_tag == "START":
-            return to_tag in ("O", "I")
+            return to_tag in {"O", "B", "U"}
         if to_tag == "END":
-            return from_tag in ("O", "B", "I")
+            return from_tag in {"O", "L", "U"}
         return any(
             [
-                # Can always transition to O or I-x
-                to_tag in ("O", "I"),
-                # Can only transition to B-x from B-x or I-x, where
-                # x is the same tag.
-                to_tag == "B"
-                and from_tag in ("B", "I")
+                from_tag in {"O", "L", "U"} and to_tag in {"O", "B", "U"},
+                from_tag in {"B", "I"}
+                and to_tag in {"I", "L"}
                 and from_entity == to_entity,
             ]
         )
+
     elif constraint_type == "BMES":
         if from_tag == "START":
-            return to_tag in ("B", "S")
+            return to_tag in {"B", "S"}
         if to_tag == "END":
-            return from_tag in ("E", "S")
+            return from_tag in {"E", "S"}
         return any(
             [
-                # Can only transition to B or S from E or S.
-                to_tag in ("B", "S") and from_tag in ("E", "S"),
-                # Can only transition to M-x from B-x, where
-                # x is the same tag.
+                to_tag in {"B", "S"} and from_tag in {"E", "S"},
                 to_tag == "M"
-                and from_tag in ("B", "M")
+                and from_tag in {"B", "M"}
                 and from_entity == to_entity,
-                # Can only transition to E-x from B-x or M-x, where
-                # x is the same tag.
                 to_tag == "E"
-                and from_tag in ("B", "M")
+                and from_tag in {"B", "M"}
                 and from_entity == to_entity,
             ]
         )
+
+    elif constraint_type == "IOB1":
+        if from_tag == "START":
+            return to_tag in {"O", "I"}
+        if to_tag == "END":
+            return from_tag in {"O", "B", "I"}
+        return any(
+            [
+                to_tag in {"O", "I"},
+                to_tag == "B"
+                and from_tag in {"B", "I"}
+                and from_entity == to_entity,
+            ]
+        )
+
     else:
         raise ValueError(f"Unknown constraint type: {constraint_type}")
 
@@ -554,16 +543,15 @@ def viterbi_decode(
         observation = tag_observations[timestep]
         # Warn the user if they have passed
         # invalid/extremely unlikely evidence.
-        if tag_observations[timestep - 1] != -1:
-            if (
-                transition_matrix[tag_observations[timestep - 1], observation]
-                < -10000
-            ):
-                logger.warning(
-                    "The pairwise potential between tags you have passed as "
-                    "observations is extremely unlikely. Double check your"
-                    "evidence or transition potentials!"
-                )
+        if tag_observations[timestep - 1] != -1 and (
+            transition_matrix[tag_observations[timestep - 1], observation]
+            < -10000
+        ):
+            logger.warning(
+                "The pairwise potential between tags you have passed as "
+                "observations is extremely unlikely. Double check your"
+                "evidence or transition potentials!"
+            )
         if observation != -1:
             one_hot = torch.zeros(num_tags)
             one_hot[observation] = 100000.0
@@ -575,8 +563,11 @@ def viterbi_decode(
     # Construct the most likely sequence backwards.
     viterbi_score, best_path = torch.max(path_scores[-1], 0)
     viterbi_path = [int(best_path.numpy())]
-    for backward_timestep in reversed(path_indices):
-        viterbi_path.append(int(backward_timestep[viterbi_path[-1]]))
+    viterbi_path.extend(
+        int(backward_timestep[viterbi_path[-1]])
+        for backward_timestep in reversed(path_indices)
+    )
+
     # Reverse the backward path.
     viterbi_path.reverse()
     return viterbi_path, viterbi_score

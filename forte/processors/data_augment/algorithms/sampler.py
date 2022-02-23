@@ -54,8 +54,7 @@ class UniformSampler(Sampler):
         self.word_list = self.configs["sampler_data"]
 
     def sample(self) -> str:
-        word: str = random.choice(self.word_list)
-        return word
+        return random.choice(self.word_list)
 
     @classmethod
     def default_configs(cls):
@@ -85,10 +84,9 @@ class UnigramSampler(Sampler):
         self.unigram = self.configs["sampler_data"].__dict__["_hparams"]
 
     def sample(self) -> str:
-        word: str = random.choices(
+        return random.choices(
             list(self.unigram.keys()), list(self.unigram.values())
         )[0]
-        return word
 
     @classmethod
     def default_configs(cls):

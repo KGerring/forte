@@ -79,10 +79,7 @@ class CoNLL03VocabularyProcessor(VocabularyProcessor):
         self.embedding_path = configs.embedding_path
 
     def normalize_func(self, x):
-        if self.normalize_digit:
-            return normalize_digit_word(x)
-        else:
-            return x
+        return normalize_digit_word(x) if self.normalize_digit else x
 
     def _process(self, data_pack: DataPack):
         """

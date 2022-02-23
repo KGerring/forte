@@ -388,7 +388,7 @@ def _get_init_paths(paths):
     inits = set()
     for path in paths:
         tmp_path = path
-        for _ in range(len(path.split("/")) - 1):
+        for _ in range(len(tmp_path.split("/")) - 1):
             tmp_path = tmp_path.rsplit("/", 1)[0]
             inits.add(os.path.join(tmp_path, "__init__"))
     return list(inits)

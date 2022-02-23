@@ -68,10 +68,7 @@ class CharacterFlipOp(TextReplacementOp):
         Returns:
             the modified character.
         """
-        if char in self.data:
-            return random.choice(self.data[char])
-        else:
-            return char
+        return random.choice(self.data[char]) if char in self.data else char
 
     def replace(self, input_anno: Annotation) -> Tuple[bool, str]:
         r"""
@@ -86,10 +83,11 @@ class CharacterFlipOp(TextReplacementOp):
             whether the replacement happens, and the second element is the
             final augmented string.
         """
-        augmented_string = ""
-        for char in input_anno.text:
-            if char == " " or random.random() > self.configs.prob:
-                augmented_string += char
-            else:
-                augmented_string += self._flip(char)
+        augmented_string = "".join(
+            char
+            if char == " " or random.random() > self.configs.prob
+            else self._flip(char)
+            for char in input_anno.text
+        )
+
         return True, augmented_string

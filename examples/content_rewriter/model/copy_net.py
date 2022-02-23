@@ -275,9 +275,7 @@ class CopyNetWrapper(tf.nn.rnn_cell.RNNCell):
         return self._vocab_size
 
     def zero_state(self, batch_size, dtype):
-        with tf.name_scope(
-            type(self).__name__ + "ZeroState", values=[batch_size]
-        ):
+        with tf.name_scope(f'{type(self).__name__}ZeroState', values=[batch_size]):
             if self._initial_cell_state is not None:
                 cell_state = self._initial_cell_state
             else:
