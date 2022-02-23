@@ -142,11 +142,10 @@ class ProcessManager:
                 f"Queue number {queue_index} exceeds queue "
                 f"size {len(self._queues)}"
             )
-        else:
-            # When a job is added to a queue, it will be
-            # consider as unprocessed.
-            job.set_status(ProcessJobStatus.UNPROCESSED)
-            self._queues[queue_index].append(job)
+        # When a job is added to a queue, it will be
+        # consider as unprocessed.
+        job.set_status(ProcessJobStatus.UNPROCESSED)
+        self._queues[queue_index].append(job)
 
     def exhausted(self) -> bool:
         r"""Returns True only if the last element remaining in the last queue is

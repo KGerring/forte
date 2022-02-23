@@ -51,11 +51,8 @@ def get_full_module_name(o, lower: bool = False) -> str:
     module = o.__module__
     if module is None or module == str.__class__.__module__:
         return o.__name__
-    name = module + "." + o.__name__
-    if lower:
-        return name.lower()
-    else:
-        return name
+    name = f'{module}.{o.__name__}'
+    return name.lower() if lower else name
 
 
 def get_class_name(o, lower: bool = False) -> str:
@@ -70,10 +67,7 @@ def get_class_name(o, lower: bool = False) -> str:
     """
     if not isinstance(o, type):
         o = o.__class__
-    if lower:
-        return o.__name__.lower()
-    else:
-        return o.__name__
+    return o.__name__.lower() if lower else o.__name__
 
 
 def get_class(class_name: str, module_paths: Optional[List[str]] = None):
@@ -123,10 +117,7 @@ def get_qual_name(o, lower: bool = False) -> str:
     """
     if not isinstance(o, type):
         o = o.__class__
-    if lower:
-        return o.__qualname__.lower()
-    else:
-        return o.__qualname__
+    return o.__qualname__.lower() if lower else o.__qualname__
 
 
 def create_class_with_kwargs(class_name: str, class_args: Dict):
@@ -142,20 +133,17 @@ def create_class_with_kwargs(class_name: str, class_args: Dict):
     cls = get_class(class_name)
     if not class_args:
         class_args = {}
-    obj = cls(**class_args)
-
-    return obj
+    return cls(**class_args)
 
 
 def check_type(obj, tp):
     if is_union_type(tp):
         return any(check_type(obj, a) for a in tp.__args__)
+    origin = get_origin(tp)
+    if origin is None or origin == tp:
+        return isinstance(obj, tp)
     else:
-        origin = get_origin(tp)
-        if origin is None or origin == tp:
-            return isinstance(obj, tp)
-        else:
-            return check_type(obj, origin)
+        return check_type(obj, origin)
 
 
 def validate_input(func, **kwargs):

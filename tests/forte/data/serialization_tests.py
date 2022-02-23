@@ -113,7 +113,7 @@ class SerializationTest(unittest.TestCase):
             data_output: str = os.path.join(main_output, subdir, "output")
             suffix = ".pickle" if method == "pickle" else ".json"
             if zip_pack:
-                suffix = suffix + ".gz"
+                suffix += ".gz"
 
             nlp = Pipeline[DataPack]()
             nlp.set_reader(OntonotesReader())

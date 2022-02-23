@@ -99,7 +99,7 @@ class LargeMovieReader(PackReader):
                 for sent in sents:
                     if len(sent) > 0:
                         sent = sent.strip()
-                        doc_text += sent + " "
+                        doc_text += f'{sent} '
                         doc_offset = sent_begin + len(sent) + 1
                         # Add sentences.
                         Sentence(data_pack, sent_begin, doc_offset - 1)

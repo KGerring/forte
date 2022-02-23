@@ -90,10 +90,11 @@ def dataset_path_iterator_with_base(
     """
     for root, _, files in os.walk(dir_path):
         for data_file in files:
-            if len(file_extension) > 0:
-                if data_file.endswith(file_extension):
-                    yield dir_path, os.path.join(root, data_file)
-            else:
+            if (
+                file_extension != ''
+                and data_file.endswith(file_extension)
+                or not file_extension
+            ):
                 yield dir_path, os.path.join(root, data_file)
 
 
@@ -106,10 +107,11 @@ def dataset_path_iterator(dir_path: str, file_extension: str) -> Iterator[str]:
 
     for root, _, files in os.walk(dir_path):
         for data_file in files:
-            if len(file_extension) > 0:
-                if data_file.endswith(file_extension):
-                    yield os.path.join(root, data_file)
-            else:
+            if (
+                file_extension != ''
+                and data_file.endswith(file_extension)
+                or not file_extension
+            ):
                 yield os.path.join(root, data_file)
 
 
@@ -149,7 +151,7 @@ def modify_text_and_track_ops(
     for span, replacement in replace_operations:
         if span.begin < 0 or span.end < 0:
             raise ValueError("Negative indexing not supported")
-        if span.begin > len(original_text) or span.end > len(original_text):
+        if span.begin > len(mod_text) or span.end > len(mod_text):
             raise ValueError(
                 "One of the span indices are outside the string length"
             )

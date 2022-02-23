@@ -412,5 +412,4 @@ class ConcatInputMLP(tx.ModuleBase):
             else:
                 values = F.embedding(index, cache)
             parts.append(values)
-        output = self.mlp(torch.cat(parts, dim=-1))
-        return output
+        return self.mlp(torch.cat(parts, dim=-1))

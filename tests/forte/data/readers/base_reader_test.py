@@ -55,10 +55,10 @@ class BaseReaderTest(unittest.TestCase):
         self.nlp.initialize()
 
     def test_memory_cache(self):
-        parsed_packs: List[DataPack] = []
+        parsed_packs: List[DataPack] = list(
+            self.nlp.process_dataset(self.dataset_path)
+        )
 
-        for pack in self.nlp.process_dataset(self.dataset_path):
-            parsed_packs.append(pack)
 
         self.assertTrue(self.reader._cache_ready)
         self.assertEqual(len(self.reader._data_packs), 3)

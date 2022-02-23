@@ -4,10 +4,7 @@ __all__ = ["EntryTypeGenerator"]
 
 
 def _get_type_attributes():
-    # TODO: implement get type_attributes using entry class hierachy
-    type_attributes = {}
-
-    return type_attributes
+    return {}
 
 
 class EntryTypeGenerator:

@@ -283,12 +283,11 @@ class DummyPackProcessor(PackProcessor):
         self.initialize_count += 1
 
     def _process(self, input_pack: DataPack):
-        entries = list(input_pack.get_entries_of(NewType))
-        if len(entries) == 0:
-            NewType(pack=input_pack, value="[PACK]")
-        else:
+        if entries := list(input_pack.get_entries_of(NewType)):
             entry = entries[0]  # type: ignore
             entry.value += "[PACK]"
+        else:
+            NewType(pack=input_pack, value="[PACK]")
 
     @classmethod
     def default_configs(cls) -> Dict[str, Any]:
@@ -313,12 +312,11 @@ class DummyFixedSizeBatchProcessor(RequestPackingProcessor):
         predict_results: Optional[Dict],
         context: Optional[Annotation] = None,
     ):
-        entries = list(pack.get_entries_of(NewType))
-        if len(entries) == 0:
-            NewType(pack=pack, value="[BATCH]")
-        else:
+        if entries := list(pack.get_entries_of(NewType)):
             entry = entries[0]  # type: ignore
             entry.value += "[BATCH]"
+        else:
+            NewType(pack=pack, value="[BATCH]")
 
 
 class DummyModel:
@@ -342,7 +340,7 @@ class PredictorPipelineTest(unittest.TestCase):
     def test_pipeline_different_batch_size_chain_predictor(self, batch_size):
         """Tests a chain of Batch->Pack->Batch with different batch sizes."""
 
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pipeline = Pipeline[DataPack]()
         pipeline.set_reader(SentenceReader())
         pipeline.initialize()
@@ -383,10 +381,7 @@ class PredictorPipelineTest(unittest.TestCase):
             for instance in pack.get(Sentence):
                 text_extractor.update_vocab(pack, instance)
 
-        num_packs = 0
-        for _ in nlp.process_dataset(data_path):
-            num_packs += 1
-
+        num_packs = sum(1 for _ in nlp.process_dataset(data_path))
         # check that all packs are yielded
         self.assertEqual(num_packs, reader.count)
 
@@ -435,7 +430,7 @@ class PipelineTest(unittest.TestCase):
         dummy = DummyPackProcessor()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
             types = list(pack.get_entries_of(NewType))
@@ -461,7 +456,7 @@ class PipelineTest(unittest.TestCase):
         }
         nlp.add(component=dummy, config=config)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
             types = list(pack.get_entries_of(NewType))
@@ -498,7 +493,7 @@ class PipelineTest(unittest.TestCase):
         }
         nlp.add(component=dummy3, config=config)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
 
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
@@ -532,7 +527,7 @@ class PipelineTest(unittest.TestCase):
         dummy3 = DummyPackProcessor()
         nlp.add(component=dummy3)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
 
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
@@ -572,7 +567,7 @@ class PipelineTest(unittest.TestCase):
         }
         nlp.add(component=dummy3, config=config)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
 
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
@@ -619,7 +614,7 @@ class PipelineTest(unittest.TestCase):
         }
         nlp.add(component=dummy3, config=config)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
 
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
@@ -669,7 +664,7 @@ class PipelineTest(unittest.TestCase):
         dummy4 = DummyPackProcessor()
         nlp.add(component=dummy4)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
 
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
@@ -701,7 +696,7 @@ class MultiPackPipelineTest(unittest.TestCase):
         )
         nlp.initialize()
 
-        dataset_path = data_samples_root + "/ontonotes/00"
+        dataset_path = f'{data_samples_root}/ontonotes/00'
 
         # get processed pack from dataset
         m_pack: MultiPack
@@ -724,7 +719,7 @@ class MultiPackPipelineTest(unittest.TestCase):
         dummy = DummyPackProcessor()
         nlp.add(dummy, selector=FirstPackSelector())
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
             types = list(pack.get_pack("pack").get_entries_of(NewType))
@@ -750,7 +745,7 @@ class MultiPackPipelineTest(unittest.TestCase):
         }
         nlp.add(component=dummy, config=config, selector=FirstPackSelector())
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         num_packs = 0
         for pack in nlp.process_dataset(data_path):
             types = list(pack.get_pack("pack").get_entries_of(NewType))
@@ -1104,9 +1099,7 @@ class DummyPackProcessorOne(DummyPackProcessor):
         record_meta["Document"] = {"2"}
 
     def expected_types_and_attributes(self):
-        expectation: Dict[str, Set[str]] = {"Sentence": {"1", "2", "3"}}
-
-        return expectation
+        return {"Sentence": {"1", "2", "3"}}
 
 
 class DummyPackProcessorTwo(DummyPackProcessor):
@@ -1115,31 +1108,27 @@ class DummyPackProcessorTwo(DummyPackProcessor):
         record_meta["Document"] = {"2"}
 
     def expected_types_and_attributes(self):
-        expectation: Dict[str, Set[str]] = {"Document": {"1", "2", "3", "4"}}
-
-        return expectation
+        return {"Document": {"1", "2", "3", "4"}}
 
 
 class DummyPackProcessorThree(DummyPackProcessor):
     def expected_types_and_attributes(self):
-        expectation: Dict[str, Set[str]] = {
+        return {
             "ft.onto.example_import_ontology.Token": {"pos", "lemma"}
         }
-
-        return expectation
 
 
 class DummyPackProcessorFour(DummyPackProcessor):
     def _process(self, input_pack: DataPack):
+        scores = {"a": 0.1, "b": 0.9}
         for sentence in input_pack.get(entry_type=Sentence):
-            scores = {"a": 0.1, "b": 0.9}
             sentence.ab = scores
 
 
 class DummyPackProcessorFive(DummyPackProcessor):
     def _process(self, input_pack: DataPack):
+        scores = 0.1
         for sentence in input_pack.get(entry_type=Sentence):
-            scores = 0.1
             sentence.classification = scores
 
 
@@ -1244,7 +1233,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         reader = DummySentenceReaderOne()
         nlp.set_reader(reader)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pack = nlp.process(data_path)
         self.assertEqual(pack._meta.record["Sentence"], {"1", "2", "3"})
 
@@ -1257,7 +1246,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyPackProcessorOne()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pack = nlp.process(data_path)
         self.assertEqual(pack._meta.record["Sentence"], {"1", "2", "3"})
         self.assertEqual(pack._meta.record["Token"], {"1", "2"})
@@ -1273,7 +1262,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyPackProcessorTwo()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         with self.assertRaises(ProcessExecutionException):
             nlp.process(data_path)
         nlp.enforce_consistency(enforce=False)
@@ -1289,7 +1278,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyEvaluatorOne()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pack = nlp.process(data_path)
         self.assertEqual(pack._meta.record["Sentence"], {"1", "2", "3"})
         self.assertEqual(pack._meta.record["Token"], {"1", "2"})
@@ -1303,7 +1292,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyEvaluatorTwo()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         with self.assertRaises(ProcessExecutionException):
             nlp.process(data_path)
 
@@ -1402,7 +1391,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyPackProcessorThree()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pack = nlp.process(data_path)
         self.assertEqual(
             pack._meta.record,
@@ -1429,7 +1418,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyEvaluatorThree()
         nlp.add(dummy)
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pack = nlp.process(data_path)
         self.assertEqual(
             pack._meta.record,
@@ -1451,7 +1440,7 @@ class RecordCheckPipelineTest(unittest.TestCase):
         dummy = DummyEvaluatorFour()
         nlp.add(dummy, ref_name="ref_dummy")
         nlp.initialize()
-        data_path = data_samples_root + "/random_texts/0.txt"
+        data_path = f'{data_samples_root}/random_texts/0.txt'
         pack = nlp.process(data_path)
         self.assertEqual(
             nlp.get_component("ref_dummy").get_result(),

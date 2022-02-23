@@ -113,17 +113,16 @@ class ClassificationDatasetReader(PackReader):
                 for df in self.configs.forte_data_fields
                 if df is not None and df != "label"
             ]
-        else:
-            if not set(self.configs.text_fields).issubset(
+        elif not set(self.configs.text_fields).issubset(
                 set(self.configs.forte_data_fields)
             ):
-                raise ProcessorConfigError(
-                    "text_fields must be a subset of forte_data_fields."
-                    f"text_fields: {self.configs.text_fields}"
-                    f"forte_data_fields: {self.configs.forte_data_fields}"
-                    "Please correct text_fields and forte_data_fields in the"
-                    " configuration to satisfy the condition."
-                )
+            raise ProcessorConfigError(
+                "text_fields must be a subset of forte_data_fields."
+                f"text_fields: {self.configs.text_fields}"
+                f"forte_data_fields: {self.configs.forte_data_fields}"
+                "Please correct text_fields and forte_data_fields in the"
+                " configuration to satisfy the condition."
+            )
 
     def _collect(  # type: ignore
         self, csv_file: str
@@ -133,8 +132,7 @@ class ClassificationDatasetReader(PackReader):
             if self.configs.skip_k_starting_lines > 0:
                 for _ in range(self.configs.skip_k_starting_lines):
                     next(data)
-            for line_id, line in enumerate(data):
-                yield line_id, line
+            yield from enumerate(data)
 
     def _cache_key_function(self, line_info: Tuple[int, List[str]]) -> str:
         return str(line_info[0])

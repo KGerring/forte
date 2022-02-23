@@ -69,8 +69,9 @@ def main():
     for context, response, negative_response in zip(
         contexts, responses, negative_responses
     ):
-        train_data.append((context, response, "1"))
-        train_data.append((context, negative_response, "0"))
+        train_data.extend(
+            ((context, response, "1"), (context, negative_response, "0"))
+        )
 
     # eval data
     conversation_with_history = data_utils.create_dataset_with_history(
@@ -86,9 +87,7 @@ def main():
     for context, response, negative_response in zip(
         contexts, responses, negative_responses
     ):
-        eval_data.append((context, response, "1"))
-        eval_data.append((context, negative_response, "0"))
-
+        eval_data.extend(((context, response, "1"), (context, negative_response, "0")))
     # test data
     conversation_with_history = data_utils.create_dataset_with_history(
         test, num_line=2
@@ -103,9 +102,7 @@ def main():
     for context, response, negative_response in zip(
         contexts, responses, negative_responses
     ):
-        test_data.append((context, response, "1"))
-        test_data.append((context, negative_response, "0"))
-
+        test_data.extend(((context, response, "1"), (context, negative_response, "0")))
     logging.info("Serialize the data...")
 
     datasets = {"train": train_data, "eval": eval_data, "test": test_data}

@@ -36,9 +36,7 @@ def post_edit(element: Tuple[Optional[str], str]) -> str:
         BIO tag in string format, e.g. `"B-PER"`.
 
     """
-    if element[0] is None:
-        return "O"
-    return "%s-%s" % (element[1], element[0])
+    return "O" if element[0] is None else "%s-%s" % (element[1], element[0])
 
 
 def bio_tagging(

@@ -238,7 +238,7 @@ class RandomSwapDataAugmentProcessor(ReplacementDataAugmentProcessor):
         for pack_name in aug_pack_names:
             data_pack: DataPack = input_pack.get_pack(pack_name)
             annotations: List[Annotation] = list(data_pack.get(augment_entry))
-            if len(annotations) > 0:
+            if annotations:
                 replace_map: Dict = {}
                 for _ in range(ceil(self.configs["alpha"] * len(annotations))):
                     swap_idx = random.sample(range(len(annotations)), 2)
@@ -319,15 +319,12 @@ class RandomInsertionDataAugmentProcessor(ReplacementDataAugmentProcessor):
                 if anno.text not in self.stopwords:
                     annotations.append(anno)
                     pos.append(anno.end)
-            if len(annotations) > 0:
+            if annotations:
                 for _ in range(ceil(self.configs["alpha"] * len(annotations))):
                     src_anno = random.choice(annotations)
                     _, replaced_text = replacement_op.replace(src_anno)
                     insert_pos = random.choice(pos)
-                    if insert_pos > 0:
-                        replaced_text = " " + replaced_text
-                    else:
-                        replaced_text = replaced_text + " "
+                    replaced_text = f" {replaced_text}" if insert_pos > 0 else f'{replaced_text} '
                     self._insert(replaced_text, data_pack, insert_pos)
 
     @classmethod

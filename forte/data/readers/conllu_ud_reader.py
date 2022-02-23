@@ -150,13 +150,13 @@ class ConllUDReader(PackReader):
 
                 sent_tokens[str(token_comps["id"])] = (token_comps, token)
 
-                sent_text += word + " "
+                sent_text += f'{word} '
                 doc_offset = word_end + 1
 
             elif line == "":
                 # sentence ends
                 sent_text = sent_text.strip()
-                doc_text += " " + sent_text
+                doc_text += f" {sent_text}"
 
                 # add dependencies for a sentence when all the tokens have been
                 # added

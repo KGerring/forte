@@ -110,8 +110,8 @@ class SST2Reader(PackReader):
         sent_lines = []
         # Read the text and tree structure.
         with open(text_path, "r", encoding="utf8") as ftext, open(
-            tree_path, "r", encoding="utf8"
-        ) as ftree:
+                tree_path, "r", encoding="utf8"
+            ) as ftree:
             ftext.readline()  # Skip the headers.
             for line_text, line_tree in zip(ftext, ftree):
                 line_text = line_text.strip()
@@ -122,7 +122,7 @@ class SST2Reader(PackReader):
                 if len(sent_lines) == n_samples:
                     yield sent_lines
                     sent_lines = []
-            if len(sent_lines) > 0:
+            if sent_lines:
                 yield sent_lines
 
     def _get_span_with_dfs(

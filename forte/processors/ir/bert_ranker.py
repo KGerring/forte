@@ -177,34 +177,26 @@ class BERTClassifier(TxBERTClassifier, PretrainedBERTMixin):
                 continue
 
             if name in global_tensor_map:
-                v_name = "_encoder." + global_tensor_map[name]
+                v_name = f"_encoder.{global_tensor_map[name]}"
                 pointer = self._name_to_variable(v_name)
                 assert pointer.shape == array.shape
                 pointer.data = torch.from_numpy(array)
-                idx += 1
             elif name in pooler_map:
-                v_name = "_encoder." + pooler_map[name]
+                v_name = f"_encoder.{pooler_map[name]}"
                 pointer = self._name_to_variable(v_name)
                 if name.endswith("bias"):
                     assert pointer.shape == array.shape
                     pointer.data = torch.from_numpy(array)
-                    idx += 1
                 else:
                     array_t = np.transpose(array)
                     assert pointer.shape == array_t.shape
                     pointer.data = torch.from_numpy(array_t)
-                    idx += 1
             elif name in output_map:
                 v_name = output_map[name]
                 pointer = self._name_to_variable(v_name)
-                if name.endswith("bias"):
+                if name.endswith("bias") or not name.endswith("bias"):
                     assert pointer.shape == array.shape
-                    pointer.data = torch.from_numpy(array)
-                    idx += 1
-                else:
-                    assert pointer.shape == array.shape
-                    pointer.data = torch.from_numpy(array)
-                    idx += 1
+                pointer.data = torch.from_numpy(array)
             else:
                 # here name is the TensorFlow variable name
                 name_tmp = name.split("/")
@@ -224,7 +216,8 @@ class BERTClassifier(TxBERTClassifier, PretrainedBERTMixin):
                     pointer.data = torch.from_numpy(array_t)
                 else:
                     raise NameError(f"Variable with name '{name}' not found")
-                idx += 1
+
+            idx += 1
 
     def _name_to_variable(self, name: str) -> Parameter:
         """

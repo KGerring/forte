@@ -107,13 +107,10 @@ class WordnetDictionary(Dictionary):
             return self.model.ADJ
         elif treebank_tag.startswith("V"):
             return self.model.VERB
-        elif treebank_tag.startswith("N"):
+        elif treebank_tag.startswith("N") or not treebank_tag.startswith("R"):
             return self.model.NOUN
-        elif treebank_tag.startswith("R"):
-            return self.model.ADV
         else:
-            # As default pos in lemmatization is Noun
-            return self.model.NOUN
+            return self.model.ADV
 
     def get_lemmas(
         self,
@@ -141,22 +138,19 @@ class WordnetDictionary(Dictionary):
         res: List[str] = []
         pos_wordnet = None
         # The POS property is used for retrieving lemmas with the same POS.
-        if pos_tag and len(pos_tag) > 0:
+        if pos_tag and pos_tag != '':
             pos_wordnet = self._get_wordnet_pos(pos_tag)
 
         for synonym in self.model.synsets(word, pos=pos_wordnet, lang=lang):
             for lemma in synonym.lemmas(lang=lang):
-                if lemma_type == "SYNONYM":
-                    res.append(lemma.name())
-                elif lemma_type == "ANTONYM":
-                    for antonym in lemma.antonyms():
-                        res.append(antonym.name())
+                if lemma_type == "ANTONYM":
+                    res.extend(antonym.name() for antonym in lemma.antonyms())
                 elif lemma_type == "HYPERNYM":
-                    for hypernym in lemma.hypernyms():
-                        res.append(hypernym.name())
+                    res.extend(hypernym.name() for hypernym in lemma.hypernyms())
                 elif lemma_type == "HYPONYM":
-                    for hyponym in lemma.hyponyms():
-                        res.append(hyponym.name())
+                    res.extend(hyponym.name() for hyponym in lemma.hyponyms())
+                elif lemma_type == "SYNONYM":
+                    res.append(lemma.name())
                 else:
                     raise KeyError(
                         "The type {} does not belong to "

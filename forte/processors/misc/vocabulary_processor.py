@@ -99,12 +99,11 @@ class Alphabet:
                 self.add(instance)
                 return self.instance2index[instance]
             else:
-                if self.ignore_case_in_query:
-                    try:
-                        return self.instance2index[instance.lower()]
-                    except KeyError:
-                        return self.instance2index[self.reserved_tokens.UNK]
-                else:
+                if not self.ignore_case_in_query:
+                    return self.instance2index[self.reserved_tokens.UNK]
+                try:
+                    return self.instance2index[instance.lower()]
+                except KeyError:
                     return self.instance2index[self.reserved_tokens.UNK]
 
     def get_instance(self, index):
@@ -143,16 +142,12 @@ class Alphabet:
             output_directory: Directory to save model and weights.
             name: The alphabet saving name, optional.
         """
-        saving_name = name if name else self.__name
+        saving_name = name or self.__name
 
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        with open(
-            os.path.join(output_directory, saving_name + ".json"),
-            "w",
-            encoding="utf-8",
-        ) as out:
+        with open(os.path.join(output_directory, f'{saving_name}.json'), "w", encoding="utf-8") as out:
             json.dump(
                 self.get_content(),
                 out,
@@ -160,11 +155,8 @@ class Alphabet:
             )
 
     def load(self, input_directory, name=None):
-        loading_name = name if name else self.__name
-        with open(
-            os.path.join(input_directory, loading_name + ".json"),
-            encoding="utf-8",
-        ) as f:
+        loading_name = name or self.__name
+        with open(os.path.join(input_directory, f'{loading_name}.json'), encoding="utf-8") as f:
             self.__from_json(json.load(f))
         self.keep_growing = False
 

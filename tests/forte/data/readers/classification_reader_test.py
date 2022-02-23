@@ -51,7 +51,7 @@ class ClassificationDatasetReaderTest(unittest.TestCase):
 
     def test_classification_dataset_reader(self):
         # test incompatible forte data field `ft.onto.base_ontology.Document`
-        
+
         with self.assertRaises(ProcessorConfigError):
             self.pipeline = Pipeline()
             self.pipeline.set_reader(ClassificationDatasetReader(),
@@ -77,7 +77,7 @@ class ClassificationDatasetReaderTest(unittest.TestCase):
                                             ]})
             self.pipeline.initialize()
             # length check happens while processing data
-            for data_pack in self.pipeline.process_dataset(self.sample_file1):
+            for _ in self.pipeline.process_dataset(self.sample_file1):
                 continue
         self.pipeline = Pipeline()
         self.pipeline.set_reader(ClassificationDatasetReader(),

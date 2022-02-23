@@ -183,10 +183,7 @@ class BaseExtractor(ABC):
         self._vocab = vocab
 
     def get_pad_value(self) -> Union[None, int, List[int]]:
-        if self.vocab is not None:
-            return self.vocab.get_pad_value()
-        else:
-            return None
+        return self.vocab.get_pad_value() if self.vocab is not None else None
 
     def vocab_items(self) -> Iterable[Tuple[Hashable, int]]:
         if self.vocab is None:

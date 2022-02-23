@@ -60,12 +60,11 @@ class SRLSpanData(tx.data.DatasetBase[str, Example]):
         raw: RawExample = json.loads(raw_example)
         assert len(raw["sentences"]) == 1
         sentence = raw["sentences"][0]
-        example: Example = {
+        return {
             "text": sentence,
             "text_ids": self._vocab.map_tokens_to_ids_py(sentence),
             "srl": [SRLSpan(*items) for items in raw["srl"][0]],
         }
-        return example
 
     def collate(self, examples: List[Example]) -> tx.data.Batch:
         sentences = [ex["text"] for ex in examples]

@@ -224,9 +224,7 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
         pack = self.get_pack_at(index_of_pack)
 
         if pack is None or (not isinstance(pack, DataPack)):
-            type_name = "None"
-            if pack is not None:
-                type_name = type(pack)
+            type_name = type(pack) if pack is not None else "None"
             raise ValueError(
                 f"Object for the index should be pack, but got "
                 f"type: {type_name}"
@@ -294,28 +292,30 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
         g: MultiPackGroup
         for g in self.get(MultiPackGroup):
             # e: Annotation
-            for e in g.get_members():
-                if e.pack_id == pack.pack_id:
-                    groups_with_pack_for_removal.append(g)
+            groups_with_pack_for_removal.extend(
+                g for e in g.get_members() if e.pack_id == pack.pack_id
+            )
 
         if (
-            len(links_with_pack_for_removal) > 0
-            or len(groups_with_pack_for_removal) > 0
+            links_with_pack_for_removal
+            and clean_invalid_entries
+            or not links_with_pack_for_removal
+            and groups_with_pack_for_removal
+            and clean_invalid_entries
         ):
-            if clean_invalid_entries:
-                # clean links and groups
-                for link in links_with_pack_for_removal:
-                    # delete_entry will take care of related indexes
-                    self.delete_entry(link)
-                for g in groups_with_pack_for_removal:
-                    # delete_entry will take care of related indexes
-                    self.delete_entry(g)
-            else:  # raise exception according to requirement
-                raise ValueError(
-                    "The pack to be removed has cross-pack references."
-                    " Please set clean_invalid_entries to be True to "
-                    " auto-remove all references to this pack"
-                )
+            # clean links and groups
+            for link in links_with_pack_for_removal:
+                # delete_entry will take care of related indexes
+                self.delete_entry(link)
+            for g in groups_with_pack_for_removal:
+                # delete_entry will take care of related indexes
+                self.delete_entry(g)
+        elif links_with_pack_for_removal or len(groups_with_pack_for_removal) > 0:
+            raise ValueError(
+                "The pack to be removed has cross-pack references."
+                " Please set clean_invalid_entries to be True to "
+                " auto-remove all references to this pack"
+            )
 
         # To keep the remaining element 's index unchanged, set to None in
         # place instead of direct removal
@@ -394,8 +394,7 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
             raise ValueError(f"The name {ref_name} has already been taken.")
         if ref_name is not None and not isinstance(ref_name, str):
             type_name = "None"
-            if ref_name is not None:
-                type_name = type(ref_name)
+            type_name = type(ref_name)
             raise ValueError(
                 f"key of the pack should be str, but got type: {type_name}"
             )
@@ -514,8 +513,7 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
             self.add_pack_(pack, pack_name)
 
     def iter_packs(self) -> Iterator[Tuple[str, DataPack]]:
-        for pack_name, pack in zip(self._pack_names, self.packs):
-            yield pack_name, pack
+        yield from zip(self._pack_names, self.packs)
 
     def rename_pack(self, old_name: str, new_name: str):
         r"""Rename the pack to a new name. If the new_name is already taken, a
@@ -727,22 +725,21 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
 
         add_new = allow_duplicate or (entry not in target)
 
-        if add_new:
-            target.add(entry)
-
-            # TODO: add the pointers?
-
-            # update the data pack index if needed
-            self._index.update_basic_index([entry])
-            if self._index.link_index_on and isinstance(entry, MultiPackLink):
-                self._index.update_link_index([entry])
-            if self._index.group_index_on and isinstance(entry, MultiPackGroup):
-                self._index.update_group_index([entry])
-
-            self._pending_entries.pop(entry.tid)
-            return entry
-        else:
+        if not add_new:
             return target[target.index(entry)]
+        target.add(entry)
+
+        # TODO: add the pointers?
+
+        # update the data pack index if needed
+        self._index.update_basic_index([entry])
+        if self._index.link_index_on and isinstance(entry, MultiPackLink):
+            self._index.update_link_index([entry])
+        if self._index.group_index_on and isinstance(entry, MultiPackGroup):
+            self._index.update_group_index([entry])
+
+        self._pending_entries.pop(entry.tid)
+        return entry
 
     def get(  # type: ignore
         self,
@@ -810,9 +807,8 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
         if include_sub_type:
             all_types = self._expand_to_sub_types(entry_type_)
 
-        if components is not None:
-            if isinstance(components, str):
-                components = [components]
+        if components is not None and isinstance(components, str):
+            components = [components]
 
         for e in entry_iter:
             # Will check for the type matching if sub types are also requested.
@@ -820,9 +816,8 @@ class MultiPack(BasePack[Entry, MultiPackLink, MultiPackGroup]):
                 continue
 
             # Check for the component.
-            if components is not None:
-                if not self.is_created_by(e, components):
-                    continue
+            if components is not None and not self.is_created_by(e, components):
+                continue
 
             yield e  # type: ignore
 

@@ -102,9 +102,7 @@ class DataPackTest(unittest.TestCase):
         # case 1: test get annotation
         sent_texts: List[Tuple[int, str]] = []
         for doc in self.data_pack.get(Document):
-            for sent in self.data_pack.get(Sentence, doc):
-                sent_texts.append(sent.text)
-
+            sent_texts.extend(sent.text for sent in self.data_pack.get(Sentence, doc))
         self.assertEqual(
             sent_texts,
             [
@@ -121,15 +119,11 @@ class DataPackTest(unittest.TestCase):
         links: List[Tuple[str, str, str]] = []
         for doc in self.data_pack.get(Document):
             link: PredicateLink
-            for link in self.data_pack.get(PredicateLink, doc):
-                links.append(
-                    (
+            links.extend((
                         link.get_parent().text,
                         link.get_child().text,
                         link.arg_type,
-                    )
-                )
-
+                    ) for link in self.data_pack.get(PredicateLink, doc))
         self.assertEqual(
             links,
             [
@@ -178,8 +172,7 @@ class DataPackTest(unittest.TestCase):
             group: CoreferenceGroup
             for group in self.data_pack.get(CoreferenceGroup, doc):
                 em: EntityMention
-                for em in group.get_members():
-                    members.append(em.text)
+                members.extend(em.text for em in group.get_members())
             groups.append(sorted(members))
 
         # get from string.
@@ -190,8 +183,7 @@ class DataPackTest(unittest.TestCase):
                 "ft.onto.base_ontology.CoreferenceGroup", doc
             ):
                 em: EntityMention
-                for em in group.get_members():
-                    members.append(em.text)
+                members.extend(em.text for em in group.get_members())
             groups_.append(sorted(members))
 
         self.assertEqual(

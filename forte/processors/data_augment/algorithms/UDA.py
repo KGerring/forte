@@ -138,14 +138,13 @@ class UDAIterator:
             is not :attr:`'none'`, otherwise a tensor with the same shape
             as the `logits_orig`.
         """
-        uda_loss = kl_divg_loss_with_logits(
+        return kl_divg_loss_with_logits(
             target_logits=logits_orig,
             input_logits=logits_aug,
             softmax_temperature=self._softmax_temperature,
             confidence_threshold=self._confidence_threshold,
             reduction=self._reduction,
         )
-        return uda_loss
 
     def __iter__(self):
         r"""

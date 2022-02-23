@@ -132,7 +132,7 @@ class RLAugmentClassifierTrainer:
                 "params": [
                     p
                     for n, p in param_optimizer
-                    if not any(nd in n for nd in no_decay)
+                    if all(nd not in n for nd in no_decay)
                 ],
                 "weight_decay": 0.01,
             },
@@ -145,6 +145,7 @@ class RLAugmentClassifierTrainer:
                 "weight_decay": 0.0,
             },
         ]
+
         aug_optim = tx.core.BertAdam(
             optimizer_grouped_parameters,
             betas=(0.9, 0.999),
@@ -389,17 +390,13 @@ class RLAugmentClassifierTrainer:
 
     def _compute_loss(self, logits, labels):
         r"""Compute loss."""
-        if self.classifier.is_binary:
-            loss = F.binary_cross_entropy(
+        return F.binary_cross_entropy(
                 logits.view(-1), labels.view(-1), reduction="mean"
-            )
-        else:
-            loss = F.cross_entropy(
+            ) if self.classifier.is_binary else F.cross_entropy(
                 logits.view(-1, self.classifier.num_classes),
                 labels.view(-1),
                 reduction="mean",
             )
-        return loss
 
     def _display_logging(self, loss):
         step = self.scheduler.last_epoch

@@ -168,10 +168,7 @@ class TrainPreprocessorTest(unittest.TestCase):
     def test_build_dataset_iterator(self):
         train_iterator = self.train_preprocessor._build_dataset_iterator()
 
-        batchs = []
-        for batch in train_iterator:
-            batchs.append(batch)
-
+        batchs = list(train_iterator)
         self.assertEqual(len(batchs), 2)
         self.assertEqual(batchs[0].batch_size, 5)
         self.assertEqual(batchs[1].batch_size, 2)
@@ -185,7 +182,7 @@ class TrainPreprocessorTest(unittest.TestCase):
                 self.assertTrue("data" in batch_t)
                 self.assertEqual(type(batch_t["data"]), torch.Tensor)
                 self.assertTrue("masks" in batch_t)
-                if tag == "text_tag" or tag == "ner_tag":
+                if tag in ["text_tag", "ner_tag"]:
                     self.assertEqual(len(batch_t["masks"]), 1)
                     self.assertEqual(type(batch_t["masks"][0]), torch.Tensor)
                 else:

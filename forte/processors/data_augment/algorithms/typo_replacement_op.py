@@ -58,11 +58,7 @@ class UniformTypoGenerator:
                 self.data = json.load(json_file)
 
     def generate(self, word: str) -> str:
-        if word in self.data.keys():
-            result: str = random.choice(self.data[word])
-            return result
-        else:
-            return word
+        return random.choice(self.data[word]) if word in self.data.keys() else word
 
 
 class TypoReplacementOp(TextReplacementOp):

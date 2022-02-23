@@ -14,9 +14,7 @@ log = logging.getLogger(__name__)
 
 
 def normalize_path(path):
-    if path is None:
-        return None
-    return os.path.abspath(os.path.expanduser(path))
+    return None if path is None else os.path.abspath(os.path.expanduser(path))
 
 
 def create(args_):

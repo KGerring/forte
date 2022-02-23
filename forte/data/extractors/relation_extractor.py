@@ -31,10 +31,12 @@ from forte.utils import get_class
 def get_index(
     pack: DataPack, index_entries: List[Annotation], context_entry: Annotation
 ):
-    founds = []
-    for i, entry in enumerate(index_entries):
-        if pack.covers(context_entry, entry):
-            founds.append(i)
+    founds = [
+        i
+        for i, entry in enumerate(index_entries)
+        if pack.covers(context_entry, entry)
+    ]
+
     return [founds[0], founds[-1] + 1]
 
 
@@ -61,27 +63,26 @@ class LinkExtractor(BaseExtractor):
             raise ProcessorConfigError(
                 "'entry_type' is required in this extractor."
             )
-        else:
-            self._entry_class: Type[Link] = get_class(self.config.entry_type)
+        self._entry_class: Type[Link] = get_class(self.config.entry_type)
 
-            if not issubclass(self._entry_class, Link):
-                raise ProcessorConfigError(
-                    "`entry_class` to this extractor " "must be a Link tpe."
-                )
+        if not issubclass(self._entry_class, Link):
+            raise ProcessorConfigError(
+                "`entry_class` to this extractor " "must be a Link tpe."
+            )
 
-            self._parent_class: Type[Annotation] = self._entry_class.ParentType
-            if not issubclass(self._parent_class, Annotation):
-                raise ProcessorConfigError(
-                    f"The parent class of the provided {self.config.entry_type}"
-                    " must be an Annotation."
-                )
+        self._parent_class: Type[Annotation] = self._entry_class.ParentType
+        if not issubclass(self._parent_class, Annotation):
+            raise ProcessorConfigError(
+                f"The parent class of the provided {self.config.entry_type}"
+                " must be an Annotation."
+            )
 
-            self._child_class: Type[Annotation] = self._entry_class.ChildType
-            if not issubclass(self._child_class, Annotation):
-                raise ProcessorConfigError(
-                    f"The child class of the provided {self.config.entry_type}"
-                    " must be an Annotation."
-                )
+        self._child_class: Type[Annotation] = self._entry_class.ChildType
+        if not issubclass(self._child_class, Annotation):
+            raise ProcessorConfigError(
+                f"The child class of the provided {self.config.entry_type}"
+                " must be an Annotation."
+            )
 
     @classmethod
     def default_configs(cls):

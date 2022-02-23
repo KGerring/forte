@@ -87,13 +87,11 @@ class AudioReaderPipelineTest(unittest.TestCase):
 
     def test_asr_pipeline(self):
         target_transcription: Dict[str, str] = {
-            self._test_audio_path + "/test_audio_0.flac":
-                "A MAN SAID TO THE UNIVERSE SIR I EXIST",
-            self._test_audio_path + "/test_audio_1.flac": (
-                "NOR IS MISTER QUILTER'S MANNER LESS INTERESTING "
-                "THAN HIS MATTER"
-            )
+            f'{self._test_audio_path}/test_audio_0.flac': "A MAN SAID TO THE UNIVERSE SIR I EXIST",
+            f'{self._test_audio_path}/test_audio_1.flac': "NOR IS MISTER QUILTER'S MANNER LESS INTERESTING "
+            "THAN HIS MATTER",
         }
+
 
         # Verify the ASR result of each datapack
         for pack in self._pipeline.process_dataset(self._test_audio_path):

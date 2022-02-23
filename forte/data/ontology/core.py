@@ -101,15 +101,14 @@ def set_state_func(instance, state):
     # NOTE: the __pack will be set via set_pack from the Pack side.
     cls_name = get_full_module_name(instance)
     for k, v in state.items():
-        key = cls_name + "_" + k
+        key = f'{cls_name}_{k}'
         if _f_struct_keys.get(key, False):
             v._set_parent(instance)
+        elif isinstance(v, (FList, FDict)):
+            v._set_parent(instance)
+            _f_struct_keys[key] = True
         else:
-            if isinstance(v, (FList, FDict)):
-                v._set_parent(instance)
-                _f_struct_keys[key] = True
-            else:
-                _f_struct_keys[key] = False
+            _f_struct_keys[key] = False
 
     instance.__dict__.update(state)
 
@@ -124,25 +123,22 @@ def get_state_func(instance):
     remained in an entry and unexpected errors could occur.
     """
     state = instance.__dict__.copy()
-    # During serialization, convert the numpy array as a list.
-    emb = list(instance._embedding.tolist())
-    if len(emb) == 0:
-        state.pop("_embedding")
-    else:
+    if emb := list(instance._embedding.tolist()):
         state["_embedding"] = emb
 
+    else:
+        state.pop("_embedding")
     cls_name = get_full_module_name(instance)
     for k, v in state.items():
-        key = cls_name + "_" + k
+        key = f'{cls_name}_{k}'
         if k in _pointer_keys:
             if _pointer_keys[key]:
                 state[k] = v.as_pointer(instance)
+        elif isinstance(v, Entry):
+            state[k] = v.as_pointer(instance)
+            _pointer_keys[key] = True
         else:
-            if isinstance(v, Entry):
-                state[k] = v.as_pointer(instance)
-                _pointer_keys[key] = True
-            else:
-                _pointer_keys[key] = False
+            _pointer_keys[key] = False
 
     state.pop("_Entry__pack")
     return state
@@ -253,16 +249,15 @@ class Entry(Generic[ContainerType]):
         """
         cls_name = get_full_module_name(self)
         for k, v in self.__dict__.items():
-            key = cls_name + "_" + k
+            key = f'{cls_name}_{k}'
             if k in _pointer_keys:
                 if _pointer_keys[key]:
                     setattr(self, k, self._resolve_pointer(v))
+            elif isinstance(v, BasePointer):
+                _pointer_keys[key] = True
+                setattr(self, k, self._resolve_pointer(v))
             else:
-                if isinstance(v, BasePointer):
-                    _pointer_keys[key] = True
-                    setattr(self, k, self._resolve_pointer(v))
-                else:
-                    _pointer_keys[key] = False
+                _pointer_keys[key] = False
 
     def as_pointer(self, from_entry: "Entry"):
         """
@@ -305,7 +300,7 @@ class Entry(Generic[ContainerType]):
         if module is None or module == str.__class__.__module__:
             return self.__class__.__name__
         else:
-            return module + "." + self.__class__.__name__
+            return f'{module}.{self.__class__.__name__}'
 
     # def _check_attr_type(self, key, value):
     #     """

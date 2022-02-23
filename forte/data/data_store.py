@@ -457,17 +457,16 @@ class DataStore(BaseStore):
         type_id = self.__type_index_dict[type_name]
         if include_sub_type:
             entry_class = get_class(type_name)
-            all_types = []
-            # iterate all classes to find subclasses
-            for types in self.__type_index_dict.items():
-                if issubclass(get_class(types[0]), entry_class):
-                    all_types.append(types[1])
+            all_types = [
+                types[1]
+                for types in self.__type_index_dict.items()
+                if issubclass(get_class(types[0]), entry_class)
+            ]
+
             for id in all_types:
-                for entry in self.__elements[id]:
-                    yield entry
+                yield from self.__elements[id]
         else:
-            for entry in self.__elements[type_id]:
-                yield entry
+            yield from self.__elements[type_id]
 
     def next_entry(self, tid: int) -> List:
         r"""Get the next entry of the same type as the `tid` entry.

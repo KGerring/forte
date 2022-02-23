@@ -63,7 +63,7 @@ class MultiPackUnboxerTest(unittest.TestCase):
         nlp_2.add(MultiPackUnboxer())
         nlp_2.initialize()
 
-        dataset_path = data_samples_root + "/ontonotes/one_file"
+        dataset_path = f'{data_samples_root}/ontonotes/one_file'
         expected_pack_name_multi = "bn/abc/00/abc_0059_multi"
         expected_pack_name = "bn/abc/00/abc_0059"
 

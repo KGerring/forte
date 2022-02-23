@@ -96,7 +96,7 @@ class SubwordExtractor(BaseExtractor):
         for subword in pack.get(self.config.subword_class, context):
             text = subword.text  # type: ignore
             if not subword.is_first_segment:  # type: ignore
-                text = "##" + text
+                text = f"##{text}"
             data.append(self.element2repr(text))
 
         data = (

@@ -52,12 +52,12 @@ class Mimic3DischargeNoteReader(PackReader):
         if len(self.headers) == 0:
             self.headers.extend(row)
             for i, h in enumerate(self.headers):
-                if h == "TEXT":
-                    self.text_col = i
-                    logging.info("Text Column is %d", i)
                 if h == "DESCRIPTION":
                     self.description_col = i
                     logging.info("Description Column is %d", i)
+                elif h == "TEXT":
+                    self.text_col = i
+                    logging.info("Text Column is %d", i)
         else:
             pack: DataPack = DataPack()
             description: str = row[self.description_col]

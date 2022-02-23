@@ -41,9 +41,7 @@ class ConllUDReaderTest(unittest.TestCase):
         pl.set_reader(ConllUDReader())
         pl.initialize()
 
-        self.data_packs: List[DataPack] = [
-            data_pack for data_pack in pl.process_dataset(conll_ud_dir)
-        ]
+        self.data_packs: List[DataPack] = list(pl.process_dataset(conll_ud_dir))
         self.doc_ids = [
             "weblog-blogspot.com_nominations_20041117172713_ENG_"
             "20041117_172713",

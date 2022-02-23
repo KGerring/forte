@@ -113,23 +113,21 @@ class ElizaProcessor(PackProcessor):
             else:
                 parent_node = parse_nodes[-1]
                 if isinstance(parent_node, Key):
-                    if tag == "decomp":
-                        parts = content.split(" ")
-                        save = False
-                        if parts[0] == "$":
-                            save = True
-                            parts = parts[1:]
-                        decomp = Decomp(parts, save, [])
-                        parent_node.decomps.append(decomp)
-                        parse_nodes.append(decomp)
-                    else:
+                    if tag != "decomp":
                         raise ValueError(f"Unexpected parent node {tag}")
+                    parts = content.split(" ")
+                    save = False
+                    if parts[0] == "$":
+                        save = True
+                        parts = parts[1:]
+                    decomp = Decomp(parts, save, [])
+                    parent_node.decomps.append(decomp)
+                    parse_nodes.append(decomp)
                 if isinstance(parent_node, Decomp):
-                    if tag == "reasmb":
-                        parts = content.split(" ")
-                        parent_node.reasmbs.append(parts)
-                    else:
+                    if tag != "reasmb":
                         raise ValueError(f"Unexpected parent node {tag}")
+                    parts = content.split(" ")
+                    parent_node.reasmbs.append(parts)
 
     def _match_decomp_r(self, parts, words, results):
         if not parts and not words:
@@ -147,7 +145,7 @@ class ElizaProcessor(PackProcessor):
             root = parts[0][1:]
             if root not in self.synons:
                 raise ValueError("Unknown synonym root {}".format(root))
-            if not words[0].lower() in self.synons[root]:
+            if words[0].lower() not in self.synons[root]:
                 return False
             results.append([words[0]])
             return self._match_decomp_r(parts[1:], words[1:], results)

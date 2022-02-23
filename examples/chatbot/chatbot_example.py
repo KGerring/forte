@@ -43,7 +43,7 @@ def setup(config: Config) -> Pipeline:
     )
     query_pipeline.add(component=SearchProcessor(), config=config.searcher)
 
-    top_response_pack_name = config.indexer.response_pack_name_prefix + "_0"
+    top_response_pack_name = f'{config.indexer.response_pack_name_prefix}_0'
 
     query_pipeline.add(
         component=NLTKSentenceSegmenter(),

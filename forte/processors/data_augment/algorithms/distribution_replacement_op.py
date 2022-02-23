@@ -122,7 +122,7 @@ class DistributionReplacementOp(TextReplacementOp, Configurable):
                 },
             )
         except KeyError as error:
-            print("Could not configure Sampler: " + repr(error))
+            print(f"Could not configure Sampler: {repr(error)}")
 
     @classmethod
     def default_configs(cls):

@@ -29,8 +29,7 @@ class EvalReader(MultiPackReader):
     def _collect(self, *args, **kwargs) -> Iterator[str]:
         file_path = args[0]
         with open(file_path, "r") as f:
-            for line in f:
-                yield line
+            yield from f
 
     def _parse_pack(self, data_source: str) -> Iterator[MultiPack]:
         fields = data_source.split("\t")

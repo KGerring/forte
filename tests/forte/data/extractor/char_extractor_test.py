@@ -54,16 +54,16 @@ class CharExtractorTest(unittest.TestCase):
             "max_char_length": 4,
         }
 
+        sentence = (
+            "The European Commission said on Thursday it disagreed "
+            "with German advice to consumers to shun British lamb "
+            "until scientists determine whether mad cow disease "
+            "can be transmitted to sheep ."
+        )
+
         for config in [config1, config2]:
             extractor = CharExtractor()
             extractor.initialize(config=config)
-
-            sentence = (
-                "The European Commission said on Thursday it disagreed "
-                "with German advice to consumers to shun British lamb "
-                "until scientists determine whether mad cow disease "
-                "can be transmitted to sheep ."
-            )
 
             for pack in pipeline.process_dataset(self.dataset_path):
                 for instance in pack.get(Sentence):
@@ -71,8 +71,10 @@ class CharExtractorTest(unittest.TestCase):
 
             features = []
             for pack in pipeline.process_dataset(self.dataset_path):
-                for instance in pack.get(Sentence):
-                    features.append(extractor.extract(pack, instance))
+                features.extend(
+                    extractor.extract(pack, instance)
+                    for instance in pack.get(Sentence)
+                )
 
             for feat in features:
                 recovered = [

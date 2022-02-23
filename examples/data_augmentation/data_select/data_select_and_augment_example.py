@@ -48,7 +48,7 @@ def main():
 
     nlp.initialize()
 
-    for _, m_pack in enumerate(nlp.process_dataset()):
+    for m_pack in nlp.process_dataset():
         aug_pack = m_pack.get_pack("augmented_input")
         logging.info(aug_pack.text)
 

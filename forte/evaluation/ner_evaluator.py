@@ -102,25 +102,24 @@ class CoNLLNEREvaluator(Evaluator):
         )
 
         call_return = os.system(eval_call)
-        if call_return == 0:
-            with open(self.score_file, "r", encoding="utf-8") as fin:
-                fin.readline()
-                line = fin.readline()
-                fields = line.split(";")
-                acc = float(fields[0].split(":")[1].strip()[:-1])
-                precision = float(fields[1].split(":")[1].strip()[:-1])
-                recall = float(fields[2].split(":")[1].strip()[:-1])
-                f_1 = float(fields[3].split(":")[1].strip())
-
-            self.scores = {
-                "accuracy": acc,
-                "precision": precision,
-                "recall": recall,
-                "f1": f_1,
-            }
-            return self.scores
-        else:
+        if call_return != 0:
             raise RuntimeError(
                 f"Error running eval script, return code is {call_return} "
                 f"when running the command {eval_call}"
             )
+        with open(self.score_file, "r", encoding="utf-8") as fin:
+            fin.readline()
+            line = fin.readline()
+            fields = line.split(";")
+            acc = float(fields[0].split(":")[1].strip()[:-1])
+            precision = float(fields[1].split(":")[1].strip()[:-1])
+            recall = float(fields[2].split(":")[1].strip()[:-1])
+            f_1 = float(fields[3].split(":")[1].strip())
+
+        self.scores = {
+            "accuracy": acc,
+            "precision": precision,
+            "recall": recall,
+            "f1": f_1,
+        }
+        return self.scores

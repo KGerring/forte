@@ -231,7 +231,7 @@ class HTMLReaderPipelineTest(unittest.TestCase):
         content = []
         for pack in self.pl1.process_dataset(value):
             content.append(pack.text)
-            count_orig = count_orig + 1
+            count_orig += 1
 
         num_files = len(os.listdir(self._cache_directory))
 
@@ -242,7 +242,7 @@ class HTMLReaderPipelineTest(unittest.TestCase):
         content_cached = []
         for pack in self.pl2.process_dataset(value):
             content_cached.append(pack.text)
-            count_cached = count_cached + 1
+            count_cached += 1
 
         self.assertEqual(count_cached, count_orig)
         self.assertEqual(content_cached, content)
@@ -283,10 +283,7 @@ class HTMLReaderPipelineTest(unittest.TestCase):
         ["<html>Test1</html>", "<html>Test12</html>", "<html>Test3</html>"],
     )
     def test_reader_with_list(self, value):
-        count_orig = 0
-
-        for _ in self.pl1.process_dataset(value):
-            count_orig = count_orig + 1
+        count_orig = sum(1 for _ in self.pl1.process_dataset(value))
 
         self.assertEqual(count_orig, len(value))
 

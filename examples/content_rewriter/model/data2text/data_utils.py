@@ -136,10 +136,9 @@ for words in score_words.values():
 
 
 def starts_with_indicating_word(token):
-    for word in indicating_words:
-        if token.startswith(word):
-            return word
-    return None
+    return next(
+        (word for word in indicating_words if token.startswith(word)), None
+    )
 
 
 def get_json_dataset(path, stage):
@@ -291,10 +290,10 @@ def annoying_number_word(sent, i):
         ),
         ((-1, 1), {"this one"}),
     ]
-    for span, words in ignores:
-        if " ".join(sent[i + span[0] : i + span[1]]) in words:
-            return True
-    return False
+    return any(
+        " ".join(sent[i + span[0] : i + span[1]]) in words
+        for span, words in ignores
+    )
 
 
 def extract_numbers(sent):
@@ -333,11 +332,8 @@ def extract_numbers(sent):
 
 
 def get_player_idx(bs, entname):
-    keys = []
-    for k, v in bs["PLAYER_NAME"].items():
-        if entname == v:
-            keys.append(k)
-    if len(keys) == 0:
+    keys = [k for k, v in bs["PLAYER_NAME"].items() if entname == v]
+    if not keys:
         for k, v in bs["SECOND_NAME"].items():
             if entname == v:
                 keys.append(k)
@@ -355,7 +351,7 @@ def get_player_idx(bs, entname):
             return None
     # if len(keys) == 0:
     # print("Couldn't find", entname, "in", bs["PLAYER_NAME"].values())
-    assert len(keys) <= 1, entname + " : " + str(bs["PLAYER_NAME"].values())
+    assert len(keys) <= 1, f'{entname} : ' + str(bs["PLAYER_NAME"].values())
     return keys[0] if len(keys) > 0 else None
 
 
@@ -538,9 +534,7 @@ def do_connect_multiwords(tokes, rels, ents, nums):
     if not tokes:
         return tokes, rels
 
-    retained = [
-        1 for i in range(len(tokes))
-    ]  # retained[i] means retaining connection between tokens i, i+1
+    retained = [1 for _ in range(len(tokes))]
     for items in [ents, nums]:
         for item in items:
             for i in range(item.start, item.end - 1):  # connect these tokens
@@ -553,12 +547,10 @@ def do_connect_multiwords(tokes, rels, ents, nums):
         if retained[i - 1]:
             new_tokens.append(token)
         else:
-            new_tokens[-1] = new_tokens[-1] + "_" + token
+            new_tokens[-1] = f'{new_tokens[-1]}_{token}'
 
     new_loc = [0]
-    for flag in retained:
-        new_loc.append(new_loc[-1] + flag)
-
+    new_loc.extend(new_loc[-1] + flag for flag in retained)
     new_rels = []
     for rel in rels:
         ent = rel.ent
@@ -595,7 +587,7 @@ def get_candidate_rels(
     generate tuples of form (sentence_tokens, [rels]) to candrels
     """
     sents = sent_tokenize(summ)
-    for j, sent in enumerate(sents):
+    for sent in sents:
         # tokes = word_tokenize(sent)
         tokes = sent.split()
         ents = extract_entities(tokes, all_ents, prons)
@@ -679,7 +671,7 @@ def append_labelnums(labels):
     print("max num labels", max_num_labels)
 
     # append number of labels to labels
-    for i, labellist in enumerate(labels):
+    for labellist in labels:
         l = len(labellist)
         labellist.extend([-1] * (max_num_labels - l))
         labellist.append(l)
@@ -726,7 +718,7 @@ def get_datasets(path, connect_multiwords=False, filter_none=False):
     extracted_stuff = {}
     for stage, dataset in datasets.items():
         nugz = []
-        for i, entry in enumerate(dataset):
+        for entry in dataset:
             summ = clean_text(" ".join(entry["summary"]))
             nugz.extend(extract(entry, summ, filter_none=filter_none))
         nugz = list(
@@ -850,10 +842,7 @@ def convert_aux(additional):
     elif isinstance(additional, str):
         aux = additional
     elif isinstance(additional, bool):
-        if additional:
-            aux = "HOME"
-        else:
-            aux = "AWAY"
+        aux = "HOME" if additional else "AWAY"
     return aux
 
 
@@ -893,9 +882,7 @@ def make_translate_corpus(data, players, teams, cities, filter_none=True):
 
     # add name information for copying
     for i, token in enumerate(tokens):
-        if token in teams:
-            rel_type = "TEAM_NAME"
-        elif token in cities:
+        if token in teams or token in cities:
             rel_type = "TEAM_NAME"
         elif token in players:
             rel_type = "PLAYER_NAME"
@@ -906,16 +893,9 @@ def make_translate_corpus(data, players, teams, cities, filter_none=True):
 
     if filter_none:
         rels = filter_none_rels(rels)
-    for rel in rels:
-        ent = rel.ent.s
-        num = str(rel.num.s)
-        res.append((rel.num.start, rel.type, ent, num))
-
-        # add home away information
-        # additional = rel[3]
-        # aux = convert_aux(additional)
-        # if aux in ("HOME", "AWAY"):
-        #     res.append((rel.num.start, "HOME_AWAY", ent, aux))
+    res.extend(
+        (rel.num.start, rel.type, rel.ent.s, str(rel.num.s)) for rel in rels
+    )
 
     res.sort()
 
@@ -1143,11 +1123,8 @@ NUM_PLAYERS = 13
 
 
 def get_player_idxs(entry):
-    nplayers = 0
     home_players, vis_players = [], []
-    for k, v in entry["box_score"]["PTS"].items():
-        nplayers += 1
-
+    nplayers = sum(1 for k, v in entry["box_score"]["PTS"].items())
     num_home, num_vis = 0, 0
     for i in range(nplayers):
         player_city = entry["box_score"]["TEAM_CITY"][str(i)]
@@ -1155,10 +1132,9 @@ def get_player_idxs(entry):
             if len(home_players) < NUM_PLAYERS:
                 home_players.append(str(i))
                 num_home += 1
-        else:
-            if len(vis_players) < NUM_PLAYERS:
-                vis_players.append(str(i))
-                num_vis += 1
+        elif len(vis_players) < NUM_PLAYERS:
+            vis_players.append(str(i))
+            num_vis += 1
     return home_players, vis_players
 
 
@@ -1166,7 +1142,7 @@ def box_preproc2(trdata):
     """
     just gets src for now
     """
-    srcs = [[] for i in range(2 * NUM_PLAYERS + 2)]
+    srcs = [[] for _ in range(2 * NUM_PLAYERS + 2)]
 
     for entry in trdata:
         home_players, vis_players = get_player_idxs(entry)
@@ -1174,7 +1150,7 @@ def box_preproc2(trdata):
             for j in range(NUM_PLAYERS):
                 src_j = []
                 player_key = player_list[j] if j < len(player_list) else None
-                for k, key in enumerate(bs_keys):
+                for key in bs_keys:
                     rulkey = key.split("-")[1]
                     val = (
                         entry["box_score"][rulkey][player_key]
@@ -1185,11 +1161,11 @@ def box_preproc2(trdata):
                 srcs[ii * NUM_PLAYERS + j].append(src_j)
 
         home_src, vis_src = [], []
-        for k in range(len(bs_keys) - len(ls_keys)):
+        for _ in range(len(bs_keys) - len(ls_keys)):
             home_src.append("PAD")
             vis_src.append("PAD")
 
-        for k, key in enumerate(ls_keys):
+        for key in ls_keys:
             home_src.append(entry["home_line"][key])
             vis_src.append(entry["vis_line"][key])
 
@@ -1251,7 +1227,7 @@ def make_pointerfi(outfi, trdata, resolve_prons=False):
         words_so_far = 0
         links = []
         prev_ents = []
-        for j, sent in enumerate(sents):
+        for sent in sents:
             tokes = word_tokenize(
                 sent
             )  # just assuming this gives me back original tokenization
@@ -1327,17 +1303,16 @@ def make_pointerfi(outfi, trdata, resolve_prons=False):
                                         + col_idx
                                         - 1
                                     )
-                            else:
-                                if entry["vis_line"][label] == word:
-                                    col_idx = ls_keys.index(label)
-                                    src_idx = (
-                                        (2 * NUM_PLAYERS + 1)
-                                        * (len(bs_keys) - 1)
-                                        + len(bs_keys)
-                                        - len(ls_keys)
-                                        + col_idx
-                                        - 1
-                                    )
+                            elif entry["vis_line"][label] == word:
+                                col_idx = ls_keys.index(label)
+                                src_idx = (
+                                    (2 * NUM_PLAYERS + 1)
+                                    * (len(bs_keys) - 1)
+                                    + len(bs_keys)
+                                    - len(ls_keys)
+                                    + col_idx
+                                    - 1
+                                )
                             if src_idx is not None:
                                 targ_idx = words_so_far + num_start + k
                                 if (

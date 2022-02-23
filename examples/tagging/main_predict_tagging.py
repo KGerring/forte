@@ -58,11 +58,16 @@ for pack in pl.process_dataset(config_predict["test_path"]):
         sent = instance.text
         output_tags = []
         if task == "ner":
-            for entry in pack.get(EntityMention, instance):
-                output_tags.append((entry.text, entry.ner_type))
+            output_tags.extend(
+                (entry.text, entry.ner_type)
+                for entry in pack.get(EntityMention, instance)
+            )
+
         else:
-            for entry in pack.get(Token, instance):
-                output_tags.append((entry.text, entry.pos))
+            output_tags.extend(
+                (entry.text, entry.pos) for entry in pack.get(Token, instance)
+            )
+
         print("---- example -----")
         print("sentence: ", sent)
         print("output_tags: ", output_tags)

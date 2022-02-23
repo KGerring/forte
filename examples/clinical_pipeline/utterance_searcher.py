@@ -24,14 +24,11 @@ def sqlite_insert(conn, table, row):
 
 
 def create_links(url_stub: str, ids: List[int]) -> List[str]:
-    links: List[str] = []
-
     url_stub: str = url_stub.strip("/")
-    for temp_idm in ids:
-        links.append(
-            f"<a href={url_stub}/documents/{temp_idm}>Report #{temp_idm}</a>"
-        )
-    return links
+    return [
+        f"<a href={url_stub}/documents/{temp_idm}>Report #{temp_idm}</a>"
+        for temp_idm in ids
+    ]
 
 
 class LastUtteranceSearcher(PackProcessor):
@@ -85,7 +82,7 @@ class LastUtteranceSearcher(PackProcessor):
                 answers += [db_id]
                 print(pack_id, db_id)
 
-            if len(answers) == 0:
+            if not answers:
                 create_utterance(
                     input_pack,
                     "No results found. Please try another query.",

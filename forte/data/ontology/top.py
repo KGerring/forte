@@ -129,12 +129,11 @@ class Annotation(Entry):
         3. In the case where both offsets are the same, we break the tie using
            the normal sorting of the class name.
         """
-        if self.begin == other.begin:
-            if self.end == other.end:
-                return str(type(self)) < str(type(other))
-            return self.end < other.end
-        else:
+        if self.begin != other.begin:
             return self.begin < other.begin
+        if self.end == other.end:
+            return str(type(self)) < str(type(other))
+        return self.end < other.end
 
     @property
     def text(self):
@@ -330,10 +329,7 @@ class Group(BaseGroup[Entry]):
                 "Cannot get members because group is not "
                 "attached to any data pack."
             )
-        member_entries = []
-        for m in self._members:
-            member_entries.append(self.pack.get_entry(m))
-        return member_entries
+        return [self.pack.get_entry(m) for m in self._members]
 
 
 class MultiPackGeneric(MultiEntry, Entry):
@@ -503,10 +499,10 @@ class MultiPackGroup(MultiEntry, BaseGroup[Entry]):
         )
 
     def get_members(self) -> List[Entry]:
-        members = []
-        for pack_idx, member_tid in self._members:
-            members.append(self.pack.get_subentry(pack_idx, member_tid))
-        return members
+        return [
+            self.pack.get_subentry(pack_idx, member_tid)
+            for pack_idx, member_tid in self._members
+        ]
 
 
 @dataclass
@@ -636,12 +632,11 @@ class AudioAnnotation(Entry):
         3. In the case where both offsets are the same, we break the tie using
            the normal sorting of the class name.
         """
-        if self.begin == other.begin:
-            if self.end == other.end:
-                return str(type(self)) < str(type(other))
-            return self.end < other.end
-        else:
+        if self.begin != other.begin:
             return self.begin < other.begin
+        if self.end == other.end:
+            return str(type(self)) < str(type(other))
+        return self.end < other.end
 
     @property
     def index_key(self) -> int:

@@ -157,23 +157,22 @@ def get_resource_name(
         logging.warning("Encounter un-parsable URL [%s]", url)
         return None
 
-    if url.startswith(resource_domain):
-        reconstruct = parsed.path
-        if not parsed.params == "":
-            reconstruct = parsed.path + ";" + parsed.params
-            # Sometimes there are ill-formed URL or resource name.
-            if reconstruct not in url:
-                logging.warning(
-                    "Encounter unexpected resource URL [%s]. This resource "
-                    "name may contain unexpected characters",
-                    url,
-                )
-                return None
-
-        # Params of the last fragment seem to be needed.
-        return re.sub("^/resource/", "", reconstruct)
-    else:
+    if not url.startswith(resource_domain):
         return str(url)
+    reconstruct = parsed.path
+    if parsed.params != "":
+        reconstruct = f'{parsed.path};{parsed.params}'
+        # Sometimes there are ill-formed URL or resource name.
+        if reconstruct not in url:
+            logging.warning(
+                "Encounter unexpected resource URL [%s]. This resource "
+                "name may contain unexpected characters",
+                url,
+            )
+            return None
+
+    # Params of the last fragment seem to be needed.
+    return re.sub("^/resource/", "", reconstruct)
 
 
 def strip_url_params(url) -> Optional[str]:
@@ -197,7 +196,7 @@ def strip_url_params(url) -> Optional[str]:
         logging.warning("Encounter un-parsable URL [%s]", url)
         return None
 
-    return parsed.scheme + "://" + parsed.netloc + parsed.path
+    return f'{parsed.scheme}://{parsed.netloc}{parsed.path}'
 
 
 def print_progress(msg: str, end="\r", terminal_only=False):
@@ -265,26 +264,17 @@ class NIFParser:
         return self.read()
 
     def parse_graph(self, data: str, tuple_format: str) -> List:
-        if self.format == "nquads":
-            g_ = rdflib.ConjunctiveGraph()
-        else:
-            g_ = rdflib.Graph()
-
+        g_ = rdflib.ConjunctiveGraph() if self.format == "nquads" else rdflib.Graph()
         g_.parse(data=data, format=tuple_format)
 
-        if self.format == "nquads":
-            return list(g_.quads())
-        else:
-            return list(g_)
+        return list(g_.quads()) if self.format == "nquads" else list(g_)
 
     def read(self):
         while True:
             line = next(self.__nif)
-            statements = list(
+            if statements := list(
                 self.parse_graph(line.decode("utf-8"), tuple_format=self.format)
-            )
-
-            if len(statements) > 0:
+            ):
                 return list(statements)
 
     def close(self):
@@ -334,7 +324,7 @@ class ContextGroupedNIFReader:
                     if c_ is None:
                         continue
 
-                    if c_ != self.__last_c and self.__last_c != "":
+                    if c_ != self.__last_c != "":
                         res_c = self.__last_c
                         res_states.extend(self.__statements)
                         self.__statements.clear()
@@ -342,7 +332,7 @@ class ContextGroupedNIFReader:
                     self.__statements.append((s, v, o))
                     self.__last_c = c_
 
-                    if not res_c == "":
+                    if res_c != "":
                         return res_c, res_states
             except StopIteration:
                 break

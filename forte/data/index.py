@@ -122,17 +122,15 @@ class BaseIndex(Generic[EntryType]):
         """
         if t in self._subtype_index:
             return self._subtype_index[t]
-        else:
-            subclass_index: Set[int] = set()
-            for index_key, index_val in self.iter_type_index():
-                if issubclass(index_key, t):
-                    subclass_index.update(index_val)
-            self._subtype_index[t] = subclass_index
-            return subclass_index
+        subclass_index: Set[int] = set()
+        for index_key, index_val in self.iter_type_index():
+            if issubclass(index_key, t):
+                subclass_index.update(index_val)
+        self._subtype_index[t] = subclass_index
+        return subclass_index
 
     def iter_type_index(self) -> Iterable[Tuple[Type, Set[int]]]:
-        for t, ids in self._type_index.items():
-            yield t, ids
+        yield from self._type_index.items()
 
     def remove_entry(self, entry: EntryType):
         self._entry_index.pop(entry.tid)

@@ -92,8 +92,8 @@ class Token(Annotation):
         self.ner: Optional[str] = None
         self.sense: Optional[str] = None
         self.is_root: Optional[bool] = None
-        self.ud_features: Dict[str, str] = dict()
-        self.ud_misc: Dict[str, str] = dict()
+        self.ud_features: Dict[str, str] = {}
+        self.ud_misc: Dict[str, str] = {}
 
 
 @dataclass
@@ -129,7 +129,7 @@ class Classification(Generics):
 
     def __init__(self, pack: DataPack):
         super().__init__(pack)
-        self.classification_result: Dict[str, float] = dict()
+        self.classification_result: Dict[str, float] = {}
 
 
 @dataclass
@@ -149,7 +149,7 @@ class Document(Annotation):
     def __init__(self, pack: DataPack, begin: int, end: int):
         super().__init__(pack, begin, end)
         self.document_class: List[str] = []
-        self.sentiment: Dict[str, float] = dict()
+        self.sentiment: Dict[str, float] = {}
         self.classifications: FDict[str, Classification] = FDict(self)
 
 
@@ -175,8 +175,8 @@ class Sentence(Annotation):
         super().__init__(pack, begin, end)
         self.speaker: Optional[str] = None
         self.part_id: Optional[int] = None
-        self.sentiment: Dict[str, float] = dict()
-        self.classification: Dict[str, float] = dict()
+        self.sentiment: Dict[str, float] = {}
+        self.classification: Dict[str, float] = {}
         self.classifications: FDict[str, Classification] = FDict(self)
 
 
@@ -460,7 +460,7 @@ class ConstituentNode(Annotation):
     def __init__(self, pack: DataPack, begin: int, end: int):
         super().__init__(pack, begin, end)
         self.label: Optional[str] = None
-        self.sentiment: Dict[str, float] = dict()
+        self.sentiment: Dict[str, float] = {}
         self.is_root: Optional[bool] = None
         self.is_leaf: Optional[bool] = None
         self.parent_node: Optional['ConstituentNode'] = None

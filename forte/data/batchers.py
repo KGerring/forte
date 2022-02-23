@@ -369,9 +369,11 @@ class FixedSizeDataPackBatcherWithExtractor(ProcessingBatcher):
 
         for instance in data_pack.get(self._context_type):
             contexts.append(instance)
-            features = {}
-            for tag, scheme in self._feature_scheme.items():
-                features[tag] = scheme["extractor"].extract(data_pack)
+            features = {
+                tag: scheme["extractor"].extract(data_pack)
+                for tag, scheme in self._feature_scheme.items()
+            }
+
             packs.append(data_pack)
             features_collection.append(features)
 
@@ -392,7 +394,7 @@ class FixedSizeDataPackBatcherWithExtractor(ProcessingBatcher):
                 current_size = self.pool_size
 
         # Flush the remaining data.
-        if len(contexts) > 0:
+        if contexts:
             batch = {
                 "packs": packs,
                 "contexts": contexts,
@@ -488,7 +490,7 @@ class FixedSizeDataPackBatcher(ProcessingBatcher[DataPack]):
                 self.batch_is_full = False
 
         # Flush the remaining data.
-        if len(instances) > 0:
+        if instances:
             batch = batch_instances(instances)
             yield batch, len(instances)
 

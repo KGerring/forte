@@ -91,11 +91,10 @@ class DummyProcessor(PackProcessor):
         self._output_records: Dict[str, Set[str]] = output_records
 
     def _process(self, input_pack: DataPack):
-        entries = list(input_pack.get_entries_of(Generics))
-        if len(entries) == 0:
-            Generics(pack=input_pack)
-        else:
+        if entries := list(input_pack.get_entries_of(Generics)):
             entry = entries[0]
+        else:
+            Generics(pack=input_pack)
 
     def expected_types_and_attributes(self):
         return self._expected_records
@@ -178,7 +177,7 @@ class AdvancedPipelineTest(unittest.TestCase):
         test_pl.initialize()
         res: DataPack = test_pl.process("")
         utterance = get_last_utterance(res, "ai")
-        self.assertEqual(len([_ for _ in res.get(Utterance)]), 2)
+        self.assertEqual(len(list(res.get(Utterance))), 2)
         self.assertEqual(utterance.text, o_str)
 
     def test_ir_selector(self):
@@ -259,7 +258,7 @@ class AdvancedPipelineTest(unittest.TestCase):
         # Verify output
         res: DataPack = test_pl.process("")
         utterance = get_last_utterance(res, "ai")
-        self.assertEqual(len([_ for _ in res.get(Utterance)]), 2)
+        self.assertEqual(len(list(res.get(Utterance))), 2)
         self.assertEqual(utterance.text, o_str)
 
     def _assertEntryTreeEqual(self, root1: EntryTreeNode, root2: EntryTreeNode):

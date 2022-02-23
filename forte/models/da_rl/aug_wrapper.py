@@ -317,8 +317,10 @@ class MetaAugmentationWrapper:
 
         input_ids_or_probs_aug = []
         for i in range(num_aug):
-            for aug_probs in aug_instances:
-                input_ids_or_probs_aug.append(aug_probs[i : i + 1])
+            input_ids_or_probs_aug.extend(
+                aug_probs[i : i + 1] for aug_probs in aug_instances
+            )
+
         input_ids_or_probs_aug = tx.utils.pad_and_concat(
             input_ids_or_probs_aug, axis=0
         ).to(self._device)
@@ -364,13 +366,12 @@ class MetaAugmentationWrapper:
         self._aug_model.eval()
         batch = tuple(t.to(self._device) for t in batch_features)
         input_ids, input_mask, segment_ids, labels = batch
-        loss = self._aug_model(
+        return self._aug_model(
             input_ids,
             token_type_ids=segment_ids,
             attention_mask=input_mask,
             labels=labels,
         )[0]
-        return loss
 
     def update_meta_model(
         self,
@@ -423,12 +424,11 @@ class MetaAugmentationWrapper:
             for i, (name, param) in enumerate(model.named_parameters())
         }
 
-        if isinstance(optimizer, tx.core.BertAdam):
-            deltas = _texar_bert_adam_delta(grads, model, optimizer)
-        else:
-            deltas = _torch_adam_delta(grads, model, optimizer)
-
-        return deltas
+        return (
+            _texar_bert_adam_delta(grads, model, optimizer)
+            if isinstance(optimizer, tx.core.BertAdam)
+            else _torch_adam_delta(grads, model, optimizer)
+        )
 
     def update_phi(self):
         # L_{val}(theta'(phi))

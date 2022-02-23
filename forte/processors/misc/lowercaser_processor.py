@@ -32,12 +32,7 @@ class LowerCaserProcessor(PackProcessor):
         if len(lower_text) == len(text):
             input_pack.set_text(lower_text.lower())
         else:
-            error_char = ""
-            for c in text:
-                if not c.lower().upper() == c:
-                    error_char = c
-                    break
-
+            error_char = next((c for c in text if c.lower().upper() != c), "")
             logging.error(
                 "Some characters cannot be converted to lower case without "
                 "changing length in pack [%s] will "

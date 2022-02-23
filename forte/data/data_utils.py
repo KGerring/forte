@@ -155,8 +155,7 @@ def _extract_google_drive_file_id(url: str) -> str:
     if url_suffix.find("/") == -1:
         # if there's no trailing '/'
         return url_suffix
-    file_id = url_suffix[: url_suffix.find("/")]
-    return file_id
+    return url_suffix[: url_suffix.find("/")]
 
 
 def _download_from_google_drive(
@@ -175,10 +174,14 @@ def _download_from_google_drive(
         raise
 
     def _get_confirm_token(response):
-        for key, value in response.cookies.items():
-            if key.startswith("download_warning"):
-                return value
-        return None
+        return next(
+            (
+                value
+                for key, value in response.cookies.items()
+                if key.startswith("download_warning")
+            ),
+            None,
+        )
 
     file_id = _extract_google_drive_file_id(url)
 

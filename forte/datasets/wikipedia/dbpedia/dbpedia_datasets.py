@@ -300,23 +300,22 @@ class WikiArticleWriter(PackWriter):
             # Load input index.
             input_index_path = self.configs.input_index_file
             self._article_index = {}
-            if os.path.exists(input_index_path):
-                self._input_index_file = open(input_index_path)
-                with open(input_index_path) as f:
-                    for line in f:
-                        article_name, sub_path = line.strip().split()
-                        self._article_index[article_name] = sub_path
-                self.__use_existing_index = True
-                self.configs.overwrite = True
-                logging.info(
-                    "Wikipedia writer is setup with existing index "
-                    "file. The output will be written following the input  "
-                    "index path and overwritten is enabled."
-                )
-            else:
+            if not os.path.exists(input_index_path):
                 raise FileNotFoundError(
                     f"Cannot find provided index file {input_index_path}"
                 )
+            self._input_index_file = open(input_index_path)
+            with open(input_index_path) as f:
+                for line in f:
+                    article_name, sub_path = line.strip().split()
+                    self._article_index[article_name] = sub_path
+            self.__use_existing_index = True
+            self.configs.overwrite = True
+            logging.info(
+                "Wikipedia writer is setup with existing index "
+                "file. The output will be written following the input  "
+                "index path and overwritten is enabled."
+            )
         else:
             self.__use_existing_index = False
 
@@ -332,24 +331,15 @@ class WikiArticleWriter(PackWriter):
 
     def sub_output_path(self, pack: DataPack) -> Optional[str]:
         if self.__use_existing_index:
-            if pack.pack_name in self._article_index:
-                # Since datasets are built separated, there might be cases
-                # where the article referred later is not in the original
-                # parsed dataset, so we need to check if they exist.
-
-                # We could replace the suffix based on writing config.
-                return (
+            return (
                     self._article_index[pack.pack_name].split(".")[0]
                     + self._suffix
-                )
-            else:
-                return None
-        else:
-            # Organize the data by IO ordering instead.
-            sub_dir = str(int(self.article_count / 2000)).zfill(5)
-            pid = pack.get_single(WikiPage).page_id  # type: ignore
-            doc_name = f"doc_{self.article_count}" if pid is None else pid
-            return os.path.join(sub_dir, doc_name) + self._suffix
+                ) if pack.pack_name in self._article_index else None
+        # Organize the data by IO ordering instead.
+        sub_dir = str(int(self.article_count / 2000)).zfill(5)
+        pid = pack.get_single(WikiPage).page_id  # type: ignore
+        doc_name = f"doc_{self.article_count}" if pid is None else pid
+        return os.path.join(sub_dir, doc_name) + self._suffix
 
     def _process(self, input_pack: DataPack):
         """
@@ -501,10 +491,7 @@ class WikiAnchorReader(WikiPackReader):
                 info_value = str(info_value)
                 if info_key == "type":
                     anchor_type = get_resource_fragment(info_value)
-                    if (
-                        not anchor_type == "Phrase"
-                        and not anchor_type == "Word"
-                    ):
+                    if anchor_type not in ["Phrase", "Word"]:
                         logging.warning("Unknown anchor type: %s", info_value)
                 if info_key == "taIdentRef":
                     target_page_name = get_resource_name(info_value)

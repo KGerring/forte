@@ -188,11 +188,7 @@ def main(
     resume_existing: bool,
 ):
     # Whether to skip the whole step.
-    if resume_existing:
-        skip_existing = False
-    else:
-        skip_existing = True
-
+    skip_existing = not resume_existing
     # The datasets are read in a few steps.
     # 0. Load redirects between wikipedia pages.
     print_progress("Loading redirects", "\n")
@@ -212,7 +208,7 @@ def main(
     main_index = os.path.join(raw_pack_dir, "article.idx")
 
     # 2. Add wiki page structures, create a new directory for it.
-    struct_dir = raw_pack_dir + "_struct"
+    struct_dir = f'{raw_pack_dir}_struct'
     add_wiki_info(
         WikiStructReader(),
         resources,
@@ -228,7 +224,7 @@ def main(
     print_progress("Done reading wikipedia structures.", "\n")
 
     # 3. Add wiki links, create a new directory for it.
-    link_dir = struct_dir + "_links"
+    link_dir = f'{struct_dir}_links'
     add_wiki_info(
         WikiAnchorReader(),
         resources,
@@ -250,7 +246,7 @@ def main(
         WikiPropertyReader(),
         resources,
         info_boxs_properties,
-        link_dir,
+        property_dir,
         property_dir,
         "info_box_properties",
         use_input_index=True,
@@ -259,6 +255,7 @@ def main(
         output_index_file_name="properties.idx",
         input_index_file_path=main_index,
     )
+
     print_progress("Done reading wikipedia info-boxes properties.", "\n")
 
     # 4.1 Add mapped literal, we directly write to the previous directory.
@@ -267,7 +264,7 @@ def main(
         WikiInfoBoxReader(),
         resources,
         mapping_literals,
-        property_dir,
+        literal_dir,
         literal_dir,
         "literals",
         use_input_index=True,
@@ -276,6 +273,7 @@ def main(
         output_index_file_name="literals.idx",
         input_index_file_path=main_index,
     )
+
     print_progress("Done reading wikipedia info-boxes literals.", "\n")
 
     # 4.1 Add mapped object, we directly write to the previous directory.
@@ -284,7 +282,7 @@ def main(
         WikiInfoBoxReader(),
         resources,
         mapping_objects,
-        literal_dir,
+        mapping_dir,
         mapping_dir,
         "objects",
         use_input_index=True,
@@ -293,6 +291,7 @@ def main(
         output_index_file_name="objects.idx",
         input_index_file_path=main_index,
     )
+
     print_progress("Done reading wikipedia info-boxes objects.", "\n")
 
     # 4.2 Add category, directly write to previous directory.
@@ -301,7 +300,7 @@ def main(
         WikiCategoryReader(),
         resources,
         categories,
-        mapping_dir,
+        category_dir,
         category_dir,
         "categories",
         use_input_index=True,

@@ -148,53 +148,40 @@ def modify_index(
     # the modification we will apply to the input index.
     last_span_ind: int = bisect_right(old_spans, Span(index, max_index)) - 1
 
-    # If there is an inserted span, it will always be the first of
-    # those spans with the same begin index. For example, given spans
-    # [1, 1], [1, 2], The inserted span [1, 1] will be in the front of
-    # replaced span [1, 2], because it has the smallest end index.
-    if last_span_ind >= 0:
-        if is_inclusive:
-            if is_begin:
-                # When inclusive, move the begin index
-                # to the left to include the inserted span.
-                if (
+    if is_inclusive:
+        if (
+            last_span_ind >= 0
+            and is_begin
+            and (
+                last_span_ind > 0
+                and old_spans[last_span_ind - 1].begin == index
+            )
+        ):
+            # Old spans: [0, 1], [1, 1], [1, 3]
+            # Target index: 1
+            # Change last_span_index from 2 to 1
+            # to include the [1, 1] span.
+            last_span_ind -= 1
+    elif (
                     last_span_ind > 0
                     and old_spans[last_span_ind - 1].begin == index
                 ):
-                    # Old spans: [0, 1], [1, 1], [1, 3]
-                    # Target index: 1
-                    # Change last_span_index from 2 to 1
-                    # to include the [1, 1] span.
-                    last_span_ind -= 1
-                else:
-                    # Old spans: [0, 1], [1, 1], [2, 3]
-                    # Target index: 1
-                    # last_span_index: 1
-                    # No need to change.
-                    pass
-
-        else:
-            if not is_begin:
-                # When exclusive, move the end index
-                # to the left to exclude the inserted span.
-                if (
-                    last_span_ind > 0
-                    and old_spans[last_span_ind - 1].begin == index
-                ):
-                    # Old spans: [0, 1], [1, 1], [1, 3]
-                    # Target index: 1
-                    # Change last_span_index from 2 to 0
-                    # to exclude the [1, 1] span.
-                    last_span_ind -= 2
-                elif (
+        if last_span_ind >= 0 and not is_begin:
+            # Old spans: [0, 1], [1, 1], [1, 3]
+            # Target index: 1
+            # Change last_span_index from 2 to 0
+            # to exclude the [1, 1] span.
+            last_span_ind -= 2
+    elif (
                     old_spans[last_span_ind].begin == index
                     and old_spans[last_span_ind].end == index
                 ):
-                    # Old spans: [0, 1], [1, 1], [2, 3]
-                    # Target index: 1
-                    # Change last_span_index from 1 to 0
-                    # to exclude the [1, 1] span.
-                    last_span_ind -= 1
+        if last_span_ind >= 0 and not is_begin:
+            # Old spans: [0, 1], [1, 1], [2, 3]
+            # Target index: 1
+            # Change last_span_index from 1 to 0
+            # to exclude the [1, 1] span.
+            last_span_ind -= 1
 
     if last_span_ind < 0:
         # There is no replacement before this index.
@@ -304,7 +291,7 @@ class ReplacementDataAugmentProcessor(BaseDataAugmentProcessor):
 
         while ind < len(self._replaced_annos[pid]):
             span: Span = self._replaced_annos[pid][ind][0]
-            if not (span.begin >= end or span.end <= begin):
+            if span.begin < end and span.end > begin:
                 return True
             if span.begin > end:
                 break
@@ -640,16 +627,13 @@ class ReplacementDataAugmentProcessor(BaseDataAugmentProcessor):
         # Copy the children entries.
         new_children: List[Entry] = []
         for child_entry in children:
-            if isinstance(child_entry, (Link, Group)):
-                # Recursively copy the children Links/Groups.
-                if not self._copy_link_or_group(
-                    child_entry, entry_map, new_pack
-                ):
-                    return False
-            else:
-                # Children Annotation must have been copied.
-                if child_entry.tid not in entry_map:
-                    return False
+            if (
+                isinstance(child_entry, (Link, Group))
+                and not self._copy_link_or_group(child_entry, entry_map, new_pack)
+                or not isinstance(child_entry, (Link, Group))
+                and child_entry.tid not in entry_map
+            ):
+                return False
             new_child: Entry = new_pack.get_entry(entry_map[child_entry.tid])
             new_children.append(new_child)
 
@@ -755,12 +739,12 @@ class ReplacementDataAugmentProcessor(BaseDataAugmentProcessor):
 
     def _process(self, input_pack: MultiPack):
         # Get the pack names for augmentation.
-        aug_pack_names: List[str] = []
+        aug_pack_names: List[str] = [
+            pack_name
+            for pack_name in self.configs["augment_pack_names"].keys()
+            if pack_name in input_pack.pack_names
+        ]
 
-        # Check if the DataPack exists.
-        for pack_name in self.configs["augment_pack_names"].keys():
-            if pack_name in input_pack.pack_names:
-                aug_pack_names.append(pack_name)
 
         if len(self.configs["augment_pack_names"].keys()) == 0:
             # Augment all the DataPacks if not specified.
@@ -770,8 +754,9 @@ class ReplacementDataAugmentProcessor(BaseDataAugmentProcessor):
         new_packs: List[Tuple[str, DataPack]] = []
         for aug_pack_name in aug_pack_names:
             new_pack_name: str = self.configs["augment_pack_names"].get(
-                aug_pack_name, "augmented_" + aug_pack_name
+                aug_pack_name, f"augmented_{aug_pack_name}"
             )
+
             data_pack = input_pack.get_pack(aug_pack_name)
             new_pack = self._auto_align_annotations(
                 data_pack=data_pack,

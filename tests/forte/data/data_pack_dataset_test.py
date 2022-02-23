@@ -61,7 +61,7 @@ class DataPackDatasetTest(unittest.TestCase):
         packs_1: List[DataPack] = []
         packs_2: List[DataPack] = []
 
-        for idx, raw_example in enumerate(data_pack_iter):
+        for raw_example in data_pack_iter:
             curr_pack: DataPack = raw_example[1]
             if curr_pack.pack_name == self.input_files[0]:
                 raw_examples_1.append(raw_example)

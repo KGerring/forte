@@ -102,7 +102,7 @@ class QueryDataSelector(BaseElasticSearchDataSelector):
                 results = self.index.search(query)
                 hits = results["hits"]["hits"]
 
-                for _, hit in enumerate(hits):
+                for hit in hits:
                     document = hit["_source"]
                     yield document["pack_info"]
 
@@ -143,7 +143,7 @@ class RandomDataSelector(BaseElasticSearchDataSelector):
         results = self.index.search(query)
         hits = results["hits"]["hits"]
 
-        for _, hit in enumerate(hits):
+        for hit in hits:
             document = hit["_source"]
             yield document["pack_info"]
 

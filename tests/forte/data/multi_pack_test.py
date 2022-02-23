@@ -67,13 +67,13 @@ class DataPackTest(unittest.TestCase):
 
         # Create some group.
         token: Annotation
-        left_tokens = {}
-        for token in self.multi_pack.packs[0].get(Token):
-            left_tokens[token.text] = token
+        left_tokens = {
+            token.text: token for token in self.multi_pack.packs[0].get(Token)
+        }
 
-        right_tokens = {}
-        for token in self.multi_pack.packs[1].get(Token):
-            right_tokens[token.text] = token
+        right_tokens = {
+            token.text: token for token in self.multi_pack.packs[1].get(Token)
+        }
 
         for key, lt in left_tokens.items():
             if key in right_tokens:
@@ -96,7 +96,7 @@ class DataPackTest(unittest.TestCase):
         g: MultiPackGroup
         for g in self.multi_pack.get(MultiPackGroup):
             e: Annotation
-            group_content.append(tuple([e.text for e in g.get_members()]))
+            group_content.append(tuple(e.text for e in g.get_members()))
 
         self.assertListEqual(expected_content, group_content)
 
@@ -123,13 +123,13 @@ class DataPackTest(unittest.TestCase):
 
         # 2. Link the same words from two packs.
         token: Annotation
-        left_tokens = {}
-        for token in self.multi_pack.packs[0].get(Token):
-            left_tokens[token.text] = token
+        left_tokens = {
+            token.text: token for token in self.multi_pack.packs[0].get(Token)
+        }
 
-        right_tokens = {}
-        for token in self.multi_pack.packs[1].get(Token):
-            right_tokens[token.text] = token
+        right_tokens = {
+            token.text: token for token in self.multi_pack.packs[1].get(Token)
+        }
 
         for key, lt in left_tokens.items():
             if key in right_tokens:
@@ -250,17 +250,20 @@ class DataPackTest(unittest.TestCase):
         # Create some group.
         token: Annotation
 
-        remove_tokens_11 = {}
-        for token in self.multi_pack.packs[ref_id11].get(Token):
-            remove_tokens_11[token.text] = token
+        remove_tokens_11 = {
+            token.text: token
+            for token in self.multi_pack.packs[ref_id11].get(Token)
+        }
 
-        remove_tokens_12 = {}
-        for token in self.multi_pack.packs[ref_id12].get(Token):
-            remove_tokens_12[token.text] = token
+        remove_tokens_12 = {
+            token.text: token
+            for token in self.multi_pack.packs[ref_id12].get(Token)
+        }
 
-        remove_tokens_13 = {}
-        for token in self.multi_pack.packs[ref_id13].get(Token):
-            remove_tokens_13[token.text] = token
+        remove_tokens_13 = {
+            token.text: token
+            for token in self.multi_pack.packs[ref_id13].get(Token)
+        }
 
         for key, rt11 in remove_tokens_11.items():
             if key in remove_tokens_12:
@@ -440,17 +443,20 @@ class DataPackTest(unittest.TestCase):
         # Create some group.
         token: Annotation
 
-        remove_tokens_11 = {}
-        for token in self.multi_pack.packs[ref_id11].get(Token):
-            remove_tokens_11[token.text] = token
+        remove_tokens_11 = {
+            token.text: token
+            for token in self.multi_pack.packs[ref_id11].get(Token)
+        }
 
-        remove_tokens_12 = {}
-        for token in self.multi_pack.packs[ref_id12].get(Token):
-            remove_tokens_12[token.text] = token
+        remove_tokens_12 = {
+            token.text: token
+            for token in self.multi_pack.packs[ref_id12].get(Token)
+        }
 
-        remove_tokens_13 = {}
-        for token in self.multi_pack.packs[ref_id13].get(Token):
-            remove_tokens_13[token.text] = token
+        remove_tokens_13 = {
+            token.text: token
+            for token in self.multi_pack.packs[ref_id13].get(Token)
+        }
 
         for key, rt11 in remove_tokens_11.items():
             if key in remove_tokens_12:

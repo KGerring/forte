@@ -65,8 +65,7 @@ class BaseMeta:
         self.record: Dict[str, Set[str]] = {}
 
     def __getstate__(self):
-        state = self.__dict__.copy()
-        return state
+        return self.__dict__.copy()
 
     def __setstate__(self, state):
         """
@@ -263,7 +262,7 @@ class BasePack(EntryContainer[EntryType, LinkType, GroupType]):
 
         """
         for entry, c in list(self._pending_entries.values()):
-            c_ = component if component else c
+            c_ = component or c
             self.add_entry(entry, c_)
         self._pending_entries.clear()
 
@@ -316,23 +315,19 @@ class BasePack(EntryContainer[EntryType, LinkType, GroupType]):
 
         Returns: Results of serialization.
         """
-        if zip_pack:
-            _open = gzip.open
-        else:
-            _open = open  # type:ignore
-
+        _open = gzip.open if zip_pack else open
         if drop_record:
             self._creation_records.clear()
             self._field_records.clear()
 
-        if serialize_method == "pickle":
-            with _open(output_path, mode="wb") as pickle_out:
-                pickle.dump(self, pickle_out)
-        elif serialize_method == "jsonpickle":
+        if serialize_method == "jsonpickle":
             with _open(output_path, mode="wt", encoding="utf-8") as json_out:
                 json_out.write(
                     self.to_string(drop_record, "jsonpickle", indent=indent)
                 )
+        elif serialize_method == "pickle":
+            with _open(output_path, mode="wb") as pickle_out:
+                pickle.dump(self, pickle_out)
         else:
             raise NotImplementedError(
                 f"Unsupported serialization method {serialize_method}"
@@ -489,8 +484,7 @@ class BasePack(EntryContainer[EntryType, LinkType, GroupType]):
         Returns:
             A set of entry ids that are created by the component.
         """
-        entry_set: Set[int] = self._creation_records[component]
-        return entry_set
+        return self._creation_records[component]
 
     def is_created_by(
         self, entry: Entry, components: Union[str, Iterable[str]]
@@ -561,11 +555,11 @@ class BasePack(EntryContainer[EntryType, LinkType, GroupType]):
             A set of all the sub-types extending the provided type, including
             the input `entry_type` itself.
         """
-        all_types: Set[Type] = set()
-        for data_type in self._index.indexed_types():
-            if issubclass(data_type, entry_type):
-                all_types.add(data_type)
-        return all_types
+        return {
+            data_type
+            for data_type in self._index.indexed_types()
+            if issubclass(data_type, entry_type)
+        }
 
     def get_entries_of(
         self, entry_type: Type[EntryType], exclude_sub_types=False

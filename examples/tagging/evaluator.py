@@ -38,24 +38,23 @@ def _get_tag(data, pack):
 def _write_tokens_to_file(
     pred_pack, pred_request, refer_pack, refer_request, output_filename
 ):
-    opened_file = open(output_filename, "w+")
-    for pred_data, refer_data in zip(
-        pred_pack.get_data(**pred_request), refer_pack.get_data(**refer_request)
-    ):
-        pred_tag = _get_tag(pred_data, pred_pack)
-        refer_tag = _get_tag(refer_data, refer_pack)
-        words = refer_data["Token"]["text"]
-        pos = refer_data["Token"]["pos"]
-        chunk = refer_data["Token"]["chunk"]
-
-        for i, (word, position, chun, tgt, pred) in enumerate(
-            zip(words, pos, chunk, refer_tag, pred_tag), 1
+    with open(output_filename, "w+") as opened_file:
+        for pred_data, refer_data in zip(
+            pred_pack.get_data(**pred_request), refer_pack.get_data(**refer_request)
         ):
-            opened_file.write(
-                "%d %s %s %s %s %s\n" % (i, word, position, chun, tgt, pred)
-            )
-        opened_file.write("\n")
-    opened_file.close()
+            pred_tag = _get_tag(pred_data, pred_pack)
+            refer_tag = _get_tag(refer_data, refer_pack)
+            words = refer_data["Token"]["text"]
+            pos = refer_data["Token"]["pos"]
+            chunk = refer_data["Token"]["chunk"]
+
+            for i, (word, position, chun, tgt, pred) in enumerate(
+                zip(words, pos, chunk, refer_tag, pred_tag), 1
+            ):
+                opened_file.write(
+                    "%d %s %s %s %s %s\n" % (i, word, position, chun, tgt, pred)
+                )
+            opened_file.write("\n")
 
 
 class CoNLLNEREvaluator(Evaluator):
